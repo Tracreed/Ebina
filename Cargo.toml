@@ -1,0 +1,26 @@
+[package]
+name = "ebina-bot"
+version = "0.1.0"
+authors = ["Tracreed <davidalasow@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dotenv = "0.15"
+tokio = { version = "1.0", features = ["macros", "signal", "rt-multi-thread"] }
+tracing = "0.1"
+tracing-subscriber = "0.2"
+tracing-futures = "0.2" # needed so intrument works with async functions.
+diesel = { version = "1.4.4", features = ["postgres", "numeric"] }
+num-bigint = { version = ">=0.1.41, <0.3", optional = true }
+num-traits = { version = "0.2", optional = true }
+num-integer = { version = "0.1.32", optional = true }
+bigdecimal = { version = "0.1.2", optional = true}
+
+[features]
+numeric = ["num-bigint", "bigdecimal", "num-traits", "num-integer"]
+
+[dependencies.serenity]
+version = "0.10.2"
+features = ["framework", "standard_framework", "rustls_backend", "collector"]
