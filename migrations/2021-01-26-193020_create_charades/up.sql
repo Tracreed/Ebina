@@ -3,6 +3,7 @@ CREATE TABLE charades (
   category VARCHAR NOT NULL,
   hint TEXT NOT NULL,
   puzzle TEXT NOT NULL,
+  solution TEXT NOT NULL,
   userID NUMERIC NOT NULL CHECK (userID >= 0 AND userID < 18446744073700000000),
   public BOOLEAN NOT NULL DEFAULT false
 )

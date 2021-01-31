@@ -65,6 +65,8 @@ use commands::{
     charades::*,
 };
 
+use bigdecimal::BigDecimal;
+
 pub struct ShardManagerContainer;
 
 impl TypeMapKey for ShardManagerContainer {
@@ -177,13 +179,15 @@ pub fn establish_connection() -> PgConnection {
         .expect(&format!("Error connecting to {}", database_url))
 }
 
-pub fn create_charade<'a>(conn: &PgConnection, category: &'a str, puzzle: &'a str, hint: &'a str) -> Charade {
+pub fn create_charade<'a>(conn: &PgConnection, category: &'a str, puzzle: &'a str, hint: &'a str, userid: &'a BigDecimal, public: &'a bool) -> Charade {
     use schema::charades;
 
     let new_charade = NewCharade {
         category: category,
-        puzzle: puzzle,
         hint: hint,
+        puzzle: puzzle,
+        userid: userid,
+        public: public,
     };
 
     diesel::insert_into(charades::table)

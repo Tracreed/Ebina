@@ -4,6 +4,7 @@ table! {
         category -> Varchar,
         hint -> Text,
         puzzle -> Text,
+        solution -> Text,
         userid -> Numeric,
         public -> Bool,
     }

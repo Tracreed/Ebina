@@ -7,6 +7,8 @@ pub struct NewCharade<'a> {
     pub category: &'a str,
     pub hint: &'a str,
     pub puzzle: &'a str,
+    pub userid: &'a BigDecimal,
+    pub public: &'a bool,
 }
 #[derive(Queryable)]
 pub struct Charade {
@@ -14,6 +16,7 @@ pub struct Charade {
     pub category: String,
     pub hint: String,
     pub puzzle: String,
+    pub solution: String,
     pub userid: BigDecimal,
     pub public: bool,
 }

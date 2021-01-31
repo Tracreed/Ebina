@@ -36,25 +36,25 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
         .build();
 
     msg.channel_id.say(&ctx.http, question).await?;
-    let mut gen = String::from("none");
+    let mut category = String::from("none");
 
-    if let Some(genre) =&msg.author.await_reply(&ctx).channel_id(msg.channel_id).timeout(Duration::from_secs(60)).await {
-        match genre.content.as_str() {
+    if let Some(message) =&msg.author.await_reply(&ctx).channel_id(msg.channel_id).timeout(Duration::from_secs(60)).await {
+        match message.content.as_str() {
             "1" => {
                 &msg.channel_id.say(&ctx.http, "Anime").await.unwrap();
-                gen = String::from("Anime");
+                category = String::from("Anime");
             },
             "2" => {
                 &msg.channel_id.say(&ctx.http, "Game").await.unwrap();
-                gen = String::from("Game");
+                category = String::from("Game");
             },
             "3" => {
                 &msg.channel_id.say(&ctx.http, "Tv-Show").await.unwrap();
-                gen = String::from("Tv-Show");
+                category = String::from("Tv-Show");
             },
             "4" => {
                 &msg.channel_id.say(&ctx.http, "Movie").await.unwrap();
-                gen = String::from("Movie");
+                category = String::from("Movie");
             },
             _ => {
                 &msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
@@ -63,7 +63,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
         }
     };
 
-    info!("{}", gen.as_str());
+    info!("{}", category.as_str());
 
     let collector = MessageCollectorBuilder::new(&ctx)
         .author_id(msg.author.id)
