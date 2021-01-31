@@ -1,3 +1,3 @@
-# Discord Bot Written in Rust
+# Ebina
 
 A bot I'm writting in rust for fun.
