@@ -90,8 +90,9 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn ready(&self, _: Context, ready: Ready) {
+    async fn ready(&self, ctx: Context, ready: Ready) {
         info!("Connected as {}", ready.user.name);
+        info!("Guilds in cache: {}", ctx.cache.guilds().await.len());
     }
 
     async fn resume(&self, _: Context, _: ResumedEvent) {
@@ -139,7 +140,7 @@ async fn main() {
         },
         Err(why) => panic!("Could not access application info: {:?}", why),
     };
-
+    
     // Create the framework
     let framework = StandardFramework::new()
         .configure(|c| c
@@ -167,7 +168,7 @@ async fn main() {
         shard_manager.lock().await.shutdown_all().await;
     });
 
-    if let Err(why) = client.start().await {
+    if let Err(why) = client.start_autosharded().await {
         error!("Client error: {:?}", why);
     }
 }
@@ -183,11 +184,11 @@ pub fn create_charade<'a>(conn: &PgConnection, category: &'a str, puzzle: &'a st
     use schema::charades;
 
     let new_charade = NewCharade {
-        category: category,
-        hint: hint,
-        puzzle: puzzle,
-        userid: userid,
-        public: public,
+        category,
+        hint,
+        puzzle,
+        userid,
+        public,
     };
 
     diesel::insert_into(charades::table)
