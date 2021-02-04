@@ -17,6 +17,7 @@ bigdecimal = { version = "0.1.2", optional = true}
 
 [features]
 numeric = ["bigdecimal"]
+default = ["bigdecimal"]
 
 [dependencies.serenity]
 version = "0.10.2"

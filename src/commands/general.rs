@@ -1,32 +1,22 @@
-use serenity::prelude::*;
+use crate::ShardManagerContainer;
+use serenity::client::bridge::gateway::{ShardId};
+use serenity::framework::standard::{macros::command, CommandResult};
 use serenity::model::prelude::*;
-use serenity::framework::standard::{
-    CommandResult,
-    macros::command,
-};
-use serenity::client::bridge::gateway::{ShardId, ShardManager};
+use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
-use std::sync::Arc;
-struct ShardManagerContainer;
-
-impl TypeMapKey for ShardManagerContainer {
-    type Value = Arc<Mutex<ShardManager>>;
-}
-
-
 
 #[command]
 pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
-
     let data = ctx.data.read().await;
 
     let shard_manager = match data.get::<ShardManagerContainer>() {
         Some(v) => v,
         None => {
-            msg.reply(ctx, "There was a problem getting the shard manager").await?;
+            msg.reply(ctx, "There was a problem getting the shard manager")
+                .await?;
 
             return Ok(());
-        },
+        }
     };
 
     let manager = shard_manager.lock().await;
@@ -38,16 +28,17 @@ pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     let runner = match runners.get(&ShardId(ctx.shard_id)) {
         Some(runner) => runner,
         None => {
-            msg.reply(ctx,  "No shard found").await?;
+            msg.reply(ctx, "No shard found").await?;
 
             return Ok(());
-        },
+        }
     };
 
     let latency = match runner.latency {
         Some(latency) => latency,
         None => {
-            println!("sad");
+            &msg.reply(ctx, "Couldn't get latency. Maybe wait a little longer")
+                .await?;
 
             return Ok(());
         }
@@ -55,9 +46,8 @@ pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 
     let response = MessageBuilder::new()
         .push_line("pong")
-        .push("Latency: ")
-        .push(latency.as_millis())
+        .push(format!("Latency: {}ms", latency.as_millis()))
         .build();
-    msg.channel_id.say(&ctx.http, "response").await?;
+    msg.channel_id.say(&ctx.http, response).await?;
     Ok(())
 }

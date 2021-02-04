@@ -10,38 +10,25 @@
 //! ```
 mod commands;
 
-pub mod schema;
 pub mod models;
+pub mod schema;
 
-use std::{
-    collections::HashSet,
-    env,
-    sync::Arc,
-};
+use std::{collections::HashSet, env, sync::Arc};
 
 #[macro_use]
 extern crate diesel;
-extern crate dotenv;
 extern crate bigdecimal;
+extern crate dotenv;
 
-use diesel::{
-    prelude::*,
-    pg::PgConnection
-};
+use diesel::{pg::PgConnection, prelude::*};
 use serenity::{
     async_trait,
     client::bridge::gateway::ShardManager,
     framework::{
-        standard::macros::{
-            group,
-            help,
-            command,
-        },
+        standard::macros::{group, help},
         standard::{
-            HelpOptions, help_commands,
-            Args, CommandResult, CommandGroup,
-            StandardFramework,
-        }
+            help_commands, Args, CommandGroup, CommandResult, HelpOptions, StandardFramework,
+        },
     },
     http::Http,
     model::prelude::*,
@@ -49,21 +36,11 @@ use serenity::{
 };
 
 use tracing::{error, info};
-use tracing_subscriber::{
-    FmtSubscriber,
-    EnvFilter,
-};
+use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
-use self::models::{
-    Charade,
-    NewCharade
-};
+use self::models::{Charade, NewCharade};
 
-use commands::{
-    general::*,
-    owner::*,
-    charades::*,
-};
+use commands::{charades::*, general::*, owner::*};
 
 use bigdecimal::BigDecimal;
 
@@ -80,7 +57,7 @@ async fn my_help(
     args: Args,
     help_options: &'static HelpOptions,
     groups: &[&'static CommandGroup],
-    owners: HashSet<UserId>
+    owners: HashSet<UserId>,
 ) -> CommandResult {
     let _ = help_commands::with_embeds(context, msg, args, &help_options, groups, owners).await;
     Ok(())
@@ -124,9 +101,7 @@ async fn main() {
 
     tracing::subscriber::set_global_default(subscriber).expect("Failed to start the logger");
 
-
-    let token = env::var("DISCORD_TOKEN")
-        .expect("Expected a token in the environment");
+    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 
     let http = Http::new_with_token(&token);
 
@@ -137,15 +112,13 @@ async fn main() {
             owners.insert(info.owner.id);
 
             (owners, info.id)
-        },
+        }
         Err(why) => panic!("Could not access application info: {:?}", why),
     };
-    
+
     // Create the framework
     let framework = StandardFramework::new()
-        .configure(|c| c
-                   .owners(owners)
-                   .prefix("~"))
+        .configure(|c| c.owners(owners).prefix("~"))
         .help(&MY_HELP)
         .group(&GENERAL_GROUP)
         .group(&CHARADES_GROUP);
@@ -164,7 +137,9 @@ async fn main() {
     let shard_manager = client.shard_manager.clone();
 
     tokio::spawn(async move {
-        tokio::signal::ctrl_c().await.expect("Could not register ctrl+c handler");
+        tokio::signal::ctrl_c()
+            .await
+            .expect("Could not register ctrl+c handler");
         shard_manager.lock().await.shutdown_all().await;
     });
 
@@ -174,19 +149,26 @@ async fn main() {
 }
 
 pub fn establish_connection() -> PgConnection {
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url))
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
 }
 
-pub fn create_charade<'a>(conn: &PgConnection, category: &'a str, puzzle: &'a str, hint: &'a str, userid: &'a BigDecimal, public: &'a bool) -> Charade {
+pub fn create_charade<'a>(
+    conn: &PgConnection,
+    category: &'a str,
+    puzzle: &'a str,
+    hint: &'a str,
+    solution: &'a str,
+    userid: &'a BigDecimal,
+    public: &'a bool,
+) -> Charade {
     use schema::charades;
 
     let new_charade = NewCharade {
         category,
         hint,
         puzzle,
+        solution,
         userid,
         public,
     };

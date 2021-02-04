@@ -2,11 +2,12 @@ use super::schema::charades;
 use bigdecimal::BigDecimal;
 
 #[derive(Insertable)]
-#[table_name="charades"]
+#[table_name = "charades"]
 pub struct NewCharade<'a> {
     pub category: &'a str,
     pub hint: &'a str,
     pub puzzle: &'a str,
+    pub solution: &'a str,
     pub userid: &'a BigDecimal,
     pub public: &'a bool,
 }
