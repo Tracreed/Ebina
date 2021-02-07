@@ -40,7 +40,7 @@ use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
 use self::models::{Charade, NewCharade};
 
-use commands::{charades::*, general::*, owner::*};
+use commands::{charades::*, general::*, owner::*, vndb::*,};
 
 use bigdecimal::BigDecimal;
 
@@ -78,7 +78,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping, quit)]
+#[commands(ping, quit, vn)]
 struct General;
 
 #[group]

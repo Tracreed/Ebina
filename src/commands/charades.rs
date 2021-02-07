@@ -6,16 +6,54 @@ use serenity::utils::MessageBuilder;
 use crate::establish_connection;
 
 use std::time::Duration;
-use std::str::FromStr;
 use tracing::{info};
 
-use bigdecimal::BigDecimal;
+use crate::diesel::prelude::*;
+use crate::diesel::sql_types;
+
+use bigdecimal::{BigDecimal, FromPrimitive};
 
 use crate::create_charade;
+use crate::models::*;
 
 #[command]
 pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
-    msg.reply(&ctx, "test").await?;
+
+    use crate::schema::charades::dsl::*;
+
+    let connection = establish_connection();
+
+    no_arg_sql_function!(
+        random,
+        sql_types::Integer,
+        "Represents the SQL RANDOM() function"
+    );
+
+    let results = charades
+        .limit(1)
+        .order(random)
+        .load::<Charade>(&connection)
+        .expect("Error loading posts");
+
+    println!("Charade with ID {} selected", results[0].id);
+
+    /* let puzz = MessageBuilder::new()
+        .push_line(&results[0].category)
+        .push(&results[0].puzzle)
+        .build();
+
+    msg.channel_id.say(&ctx, puzz).await?; */
+    msg.channel_id.send_message(&ctx.http, |m| {
+        m.embed(|e| {
+            e.title(format!("Guess that {}", results[0].category));
+            e.description(&results[0].puzzle);
+            e.author(|a| {
+                a.name("test")
+            })
+        });
+
+        m
+    }).await?;
 
     Ok(())
 }
@@ -131,7 +169,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
 
     let conn = establish_connection();
 
-    create_charade(&conn, &category.as_str(), &puzzle.as_str(), &hint.as_str(), &solution.as_str(), &BigDecimal::from_str(&msg.author.id.to_string().as_str())?, &true);
+    create_charade(&conn, &category.as_str(), &puzzle.as_str(), &hint.as_str(), &solution.as_str(), &BigDecimal::from_u64(*msg.author.id.as_u64()).unwrap(), &true);
 
     Ok(())
 }

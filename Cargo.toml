@@ -14,6 +14,7 @@ tracing-subscriber = "0.2"
 tracing-futures = "0.2" # needed so intrument works with async functions.
 diesel = { version = "1.4.4", features = ["postgres", "numeric"] }
 bigdecimal = { version = "0.1.2", optional = true}
+vndb = { version = "0.11.0", features = ["tokio-on"] }
 
 [features]
 numeric = ["bigdecimal"]

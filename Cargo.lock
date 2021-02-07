@@ -243,6 +243,7 @@ dependencies = [
  "tracing",
  "tracing-futures",
  "tracing-subscriber",
+ "vndb",
 ]
 
 [[package]]
@@ -1399,6 +1400,18 @@ name = "version_check"
 version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5a972e5669d67ba988ce3dc826706fb0a8b01471c088cb0b6110b805cc36aed"
+
+[[package]]
+name = "vndb"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "efc09e38eea067e4899b427684a35a2abab1b7ec76d6d0267a01dbcecca1818b"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-rustls",
+]
 
 [[package]]
 name = "want"
