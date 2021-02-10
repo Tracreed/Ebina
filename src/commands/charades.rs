@@ -1,12 +1,15 @@
 use serenity::framework::standard::{macros::command, CommandResult};
+use serenity::futures::stream::StreamExt;
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 
 use crate::establish_connection;
 
+use crate::schema::{Categories, Difficulties};
+
 use std::time::Duration;
-use tracing::{info};
+use tracing::info;
 
 use crate::diesel::prelude::*;
 use crate::diesel::sql_types;
@@ -18,7 +21,6 @@ use crate::models::*;
 
 #[command]
 pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
-
     use crate::schema::charades::dsl::*;
 
     let connection = establish_connection();
@@ -37,24 +39,35 @@ pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
 
     println!("Charade with ID {} selected", results[0].id);
 
-    /* let puzz = MessageBuilder::new()
-        .push_line(&results[0].category)
-        .push(&results[0].puzzle)
-        .build();
+    msg.channel_id
+        .send_message(&ctx.http, |m| {
+            m.embed(|e| {
+                e.title(format!("Guess that {:?}", results[0].category));
+                e.description(&results[0].puzzle)
+            });
 
-    msg.channel_id.say(&ctx, puzz).await?; */
-    msg.channel_id.send_message(&ctx.http, |m| {
-        m.embed(|e| {
-            e.title(format!("Guess that {}", results[0].category));
-            e.description(&results[0].puzzle);
-            e.author(|a| {
-                a.name("test")
-            })
-        });
+            m
+        })
+        .await?;
 
-        m
-    }).await?;
+    let mut replies = msg
+        .author
+        .await_replies(&ctx)
+        .channel_id(msg.channel_id)
+        .timeout(Duration::from_secs(60))
+        .await;
 
+    let http = &ctx.http;
+
+    while let Some(reply) = replies.next().await {
+        if reply.content == results[0].solution {
+            reply
+                .reply(http, "You got it right! Haha :D xD UwU")
+                .await?;
+            replies.stop();
+            break;
+        }
+    }
     Ok(())
 }
 
@@ -70,7 +83,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
         .build();
 
     msg.channel_id.say(&ctx.http, question).await?;
-    let mut category = String::from("none");
+    let mut category = Categories::Anime;
 
     if let Some(message) = &msg
         .author
@@ -82,19 +95,19 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
         match message.content.as_str() {
             "1" => {
                 &msg.channel_id.say(&ctx.http, "Anime").await.unwrap();
-                category = String::from("Anime");
+                category = Categories::Anime;
             }
             "2" => {
                 &msg.channel_id.say(&ctx.http, "Game").await.unwrap();
-                category = String::from("Game");
+                category = Categories::Game;
             }
             "3" => {
                 &msg.channel_id.say(&ctx.http, "Tv-Show").await.unwrap();
-                category = String::from("Tv-Show");
+                category = Categories::TV;
             }
             "4" => {
                 &msg.channel_id.say(&ctx.http, "Movie").await.unwrap();
-                category = String::from("Movie");
+                category = Categories::Movie;
             }
             _ => {
                 &msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
@@ -102,7 +115,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
         }
     };
 
-    info!("{}", category.as_str());
+    info!("{:?}", category);
     let mut puzzle = String::from("");
 
     &msg.channel_id.say(&ctx, "What is the puzzle?").await?;
@@ -117,7 +130,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
         puzzle = message.content.clone();
     };
 
-    let mut hint= String::from("");
+    let mut hint = String::from("");
 
     &msg.channel_id.say(&ctx, "Hint? (y/n)").await?;
 
@@ -144,7 +157,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
 
     let mut solution = String::from("");
 
-    &msg.channel_id.say(&ctx, "What is the solution?").await?;  
+    &msg.channel_id.say(&ctx, "What is the solution?").await?;
 
     if let Some(message) = &msg
         .author
@@ -156,20 +169,27 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
         solution = message.content.clone();
     }
 
-
     let response = MessageBuilder::new()
-        .push_line(format!("Category is: {}", category))
+        .push_line(format!("Category is: {:?}", category))
         .push_line(format!("Hint is: {}", hint))
         .push_line(format!("Puzzle is: {}", &puzzle))
         .push_line(format!("Solution is {}", solution))
         .build();
 
-
     &msg.channel_id.say(&ctx, response).await?;
 
     let conn = establish_connection();
 
-    create_charade(&conn, &category.as_str(), &puzzle.as_str(), &hint.as_str(), &solution.as_str(), &BigDecimal::from_u64(*msg.author.id.as_u64()).unwrap(), &true);
+    create_charade(
+        &conn,
+        &category,
+        &puzzle.as_str(),
+        &hint.as_str(),
+        &solution.as_str(),
+        &Difficulties::Easy,
+        &BigDecimal::from_u64(*msg.author.id.as_u64()).unwrap(),
+        &true,
+    );
 
     Ok(())
 }

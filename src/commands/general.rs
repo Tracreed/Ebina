@@ -1,9 +1,8 @@
 use crate::ShardManagerContainer;
-use serenity::client::bridge::gateway::{ShardId};
+use serenity::client::bridge::gateway::ShardId;
 use serenity::framework::standard::{macros::command, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
-use serenity::utils::MessageBuilder;
 
 #[command]
 pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
@@ -44,10 +43,22 @@ pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
         }
     };
 
-    let response = MessageBuilder::new()
-        .push_line("pong")
-        .push(format!("Latency: {}ms", latency.as_millis()))
-        .build();
-    msg.channel_id.say(&ctx.http, response).await?;
+    msg.reply(&ctx.http, format!("Latency: {}ms", latency.as_millis()))
+        .await?;
+    Ok(())
+}
+
+#[command]
+#[description = "Invite the bot to your server"]
+pub async fn invite(ctx: &Context, msg: &Message) -> CommandResult {
+    let user = ctx.http.get_current_user().await?;
+    msg.channel_id.send_message(&ctx.http, |m| {
+        m.embed(|e| {
+            e.title("Invite me");
+            e.url(format!("https://discord.com/oauth2/authorize?client_id={}&permissions=305654870&scope=bot", user.id))
+        });
+
+        m
+    }).await?;
     Ok(())
 }

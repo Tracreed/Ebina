@@ -78,7 +78,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping, quit, vn)]
+#[commands(ping, quit, vn, invite)]
 struct General;
 
 #[group]
@@ -118,7 +118,7 @@ async fn main() {
 
     // Create the framework
     let framework = StandardFramework::new()
-        .configure(|c| c.owners(owners).prefix("~"))
+        .configure(|c| c.owners(owners).prefixes(vec!["~", "ebina ", "*"]))
         .help(&MY_HELP)
         .group(&GENERAL_GROUP)
         .group(&CHARADES_GROUP);
@@ -153,22 +153,27 @@ pub fn establish_connection() -> PgConnection {
     PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
 }
 
+use schema::*;
+
 pub fn create_charade<'a>(
     conn: &PgConnection,
-    category: &'a str,
+    category: &'a Categories,
     puzzle: &'a str,
     hint: &'a str,
     solution: &'a str,
+    difficulty: &'a Difficulties,
     userid: &'a BigDecimal,
     public: &'a bool,
 ) -> Charade {
     use schema::charades;
+    use schema::*;
 
     let new_charade = NewCharade {
         category,
         hint,
         puzzle,
         solution,
+        difficulty,
         userid,
         public,
     };
