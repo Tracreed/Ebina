@@ -165,8 +165,6 @@ pub fn create_charade<'a>(
     userid: &'a BigDecimal,
     public: &'a bool,
 ) -> Charade {
-    use schema::charades;
-    use schema::*;
 
     let new_charade = NewCharade {
         category,
