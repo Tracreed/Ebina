@@ -14,7 +14,7 @@ use tracing::info;
 use crate::diesel::prelude::*;
 use crate::diesel::sql_types;
 
-use bigdecimal::{BigDecimal, FromPrimitive};
+use bigdecimal::{BigDecimal, FromPrimitive, ToPrimitive};
 
 use crate::create_charade;
 use crate::models::*;
@@ -39,11 +39,17 @@ pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
 
     println!("Charade with ID {} selected", results[0].id);
 
+    let username = &ctx.http.get_user(results[0].userid.to_u64().unwrap()).await?.name;
+
     msg.channel_id
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
                 e.title(format!("Guess that {:?}", results[0].category));
-                e.description(&results[0].puzzle)
+                e.description(&results[0].puzzle);
+                e.field("Difficulty", format!("{:?}", results[0].difficulty), true);
+                e.footer(|f| {
+                    f.text(format!("Added by {}", username))
+                })
             });
 
             m
@@ -60,9 +66,9 @@ pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
     let http = &ctx.http;
 
     while let Some(reply) = replies.next().await {
-        if reply.content == results[0].solution {
+        if reply.content.to_lowercase() == results[0].solution.to_lowercase() {
             reply
-                .reply(http, "You got it right! Haha :D xD UwU")
+                .reply(http, "You got it right!")
                 .await?;
             replies.stop();
             break;
@@ -74,7 +80,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 #[owners_only]
 pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
-    let question = MessageBuilder::new()
+    let mut question = MessageBuilder::new()
         .push_line("What is the category? (Type the number of the corresponding category)")
         .push_line("1. Anime")
         .push_line("2. Game")
@@ -108,6 +114,42 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
             "4" => {
                 &msg.channel_id.say(&ctx.http, "Movie").await.unwrap();
                 category = Categories::Movie;
+            }
+            _ => {
+                &msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
+            }
+        }
+    };
+
+    question = MessageBuilder::new()
+        .push_line("What is the Difficulty? (Type the number of the corresponding category)")
+        .push_line("1. Easy")
+        .push_line("2. Medium")
+        .push_line("3. Hard")
+        .build();
+
+    msg.channel_id.say(&ctx.http, question).await?;
+    let mut difficulty = Difficulties::Easy;
+
+    if let Some(message) = &msg
+        .author
+        .await_reply(&ctx)
+        .channel_id(msg.channel_id)
+        .timeout(Duration::from_secs(60))
+        .await
+    {
+        match message.content.as_str() {
+            "1" => {
+                &msg.channel_id.say(&ctx.http, "Easy").await.unwrap();
+                difficulty = Difficulties::Easy;
+            }
+            "2" => {
+                &msg.channel_id.say(&ctx.http, "Medium").await.unwrap();
+                difficulty = Difficulties::Medium;
+            }
+            "3" => {
+                &msg.channel_id.say(&ctx.http, "Hard").await.unwrap();
+                difficulty = Difficulties::Hard;
             }
             _ => {
                 &msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
@@ -173,7 +215,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
         .push_line(format!("Category is: {:?}", category))
         .push_line(format!("Hint is: {}", hint))
         .push_line(format!("Puzzle is: {}", &puzzle))
-        .push_line(format!("Solution is {}", solution))
+        .push_line(format!("Solution is: {}", solution))
         .build();
 
     &msg.channel_id.say(&ctx, response).await?;
@@ -186,7 +228,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
         &puzzle.as_str(),
         &hint.as_str(),
         &solution.as_str(),
-        &Difficulties::Easy,
+        &difficulty,
         &BigDecimal::from_u64(*msg.author.id.as_u64()).unwrap(),
         &true,
     );

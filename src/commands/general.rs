@@ -55,7 +55,7 @@ pub async fn invite(ctx: &Context, msg: &Message) -> CommandResult {
     msg.channel_id.send_message(&ctx.http, |m| {
         m.embed(|e| {
             e.title("Invite me");
-            e.url(format!("https://discord.com/oauth2/authorize?client_id={}&permissions=305654870&scope=bot", user.id))
+            e.url(format!("https://discord.com/oauth2/authorize?client_id={}&permissions=0&scope=bot", user.id))
         });
 
         m

@@ -106,7 +106,7 @@ async fn main() {
     let http = Http::new_with_token(&token);
 
     // We will fetch your bot's owners and id
-    let (owners, _bot_id) = match http.get_current_application_info().await {
+    let (owners, bot_id) = match http.get_current_application_info().await {
         Ok(info) => {
             let mut owners = HashSet::new();
             owners.insert(info.owner.id);
@@ -118,7 +118,7 @@ async fn main() {
 
     // Create the framework
     let framework = StandardFramework::new()
-        .configure(|c| c.owners(owners).prefixes(vec!["~", "ebina ", "*"]))
+        .configure(|c| c.owners(owners).prefixes(vec!["~", "ebina "]).on_mention(Some(bot_id)))
         .help(&MY_HELP)
         .group(&GENERAL_GROUP)
         .group(&CHARADES_GROUP);

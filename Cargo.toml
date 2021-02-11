@@ -18,6 +18,9 @@ vndb = { version = "0.11.0", features = ["tokio-on"] }
 serde_json = "1.0"
 serde = "1.0.123"
 diesel-derive-enum = { version = "1", features = ["postgres"] }
+regex = "1"
+isolang = "1.0.0"
+language-tags = "0.2.2"
 
 [features]
 numeric = ["bigdecimal"]
