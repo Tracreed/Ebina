@@ -31,10 +31,7 @@ pub async fn user(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
 		Ok(v) => {v},
 		Err(_) => {&msg.author.name}.to_string(),
 	};
-	let mode = match args.single::<String>() {
-		Ok(v) => {v},
-		Err(_) => {String::from("")},
-	};
+	let mode = args.single::<String>().unwrap_or("".to_string());
 	let users = client.search_user(username.clone()).await?;
 	if users.user.data.len() < 1 {
 		let message = MessageBuilder::new()
