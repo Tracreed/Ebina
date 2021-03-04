@@ -20,218 +20,233 @@ use crate::create_charade;
 use crate::models::*;
 
 #[command]
+#[description = "A game similar to solving a rebus, figure out the anime/game from the emojis!"]
 pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
-    use crate::schema::charades::dsl::*;
+	use crate::schema::charades::dsl::*;
 
-    let connection = establish_connection();
+	let connection = establish_connection();
 
-    no_arg_sql_function!(
-        random,
-        sql_types::Integer,
-        "Represents the SQL RANDOM() function"
-    );
+	no_arg_sql_function!(
+		random,
+		sql_types::Integer,
+		"Represents the SQL RANDOM() function"
+	);
 
-    let results = charades
-        .limit(1)
-        .order(random)
-        .load::<Charade>(&connection)
-        .expect("Error loading posts");
+	let results = charades
+		.limit(1)
+		.order(random)
+		.load::<Charade>(&connection)
+		.expect("Error loading posts");
 
-    println!("Charade with ID {} selected", results[0].id);
+	println!("Charade with ID {} selected", results[0].id);
 
-    let username = &ctx.http.get_user(results[0].userid.to_u64().unwrap()).await?.name;
+	let username = &ctx
+		.http
+		.get_user(results[0].userid.to_u64().unwrap())
+		.await?
+		.name;
 
-    msg.channel_id
-        .send_message(&ctx.http, |m| {
-            m.embed(|e| {
-                e.title(format!("Guess that {:?}", results[0].category));
-                e.description(&results[0].puzzle);
-                e.field("Difficulty", format!("{:?}", results[0].difficulty), true);
-                e.footer(|f| {
-                    f.text(format!("Added by {}", username))
-                })
-            });
+	msg.channel_id
+		.send_message(&ctx.http, |m| {
+			m.embed(|e| {
+				e.title(format!("Guess that {:?}", results[0].category));
+				e.description(&results[0].puzzle);
+				e.field("Difficulty", format!("{:?}", results[0].difficulty), true);
+				e.footer(|f| f.text(format!("Added by {}", username)))
+			});
 
-            m
-        })
-        .await?;
+			m
+		})
+		.await?;
 
-    let mut replies = msg
-        .author
-        .await_replies(&ctx)
-        .channel_id(msg.channel_id)
-        .timeout(Duration::from_secs(60))
-        .await;
+	let mut replies = msg
+		.author
+		.await_replies(&ctx)
+		.channel_id(msg.channel_id)
+		.timeout(Duration::from_secs(60))
+		.await;
 
-    let http = &ctx.http;
+	let http = &ctx.http;
 
-    while let Some(reply) = replies.next().await {
-        if reply.content.to_lowercase() == results[0].solution.to_lowercase() {
-            reply
-                .reply(http, "You got it right!")
-                .await?;
-            replies.stop();
-            break;
-        }
-    }
-    Ok(())
+	loop {
+		match replies.next().await {
+			Some(reply) => {
+				if reply.content.to_lowercase() == results[0].solution.to_lowercase() {
+					reply.reply(http, "You got it right!").await?;
+					replies.stop();
+					break;
+				}
+			}
+			None => {
+				msg.channel_id
+					.send_message(&ctx.http, |m| {
+						m.embed(|e| e.title("Time is up"));
+
+						m
+					})
+					.await?;
+				break;
+			}
+		}
+	}
+	Ok(())
 }
 
 #[command]
 #[owners_only]
 pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
-    let mut question = MessageBuilder::new()
-        .push_line("What is the category? (Type the number of the corresponding category)")
-        .push_line("1. Anime")
-        .push_line("2. Game")
-        .push_line("3. Tv-Show")
-        .push_line("4. Movie")
-        .build();
+	let mut question = MessageBuilder::new()
+		.push_line("What is the category? (Type the number of the corresponding category)")
+		.push_line("1. Anime")
+		.push_line("2. Game")
+		.push_line("3. Tv-Show")
+		.push_line("4. Movie")
+		.build();
 
-    msg.channel_id.say(&ctx.http, question).await?;
-    let mut category = Categories::Anime;
+	msg.channel_id.say(&ctx.http, question).await?;
+	let mut category = Categories::Anime;
 
-    if let Some(message) = &msg
-        .author
-        .await_reply(&ctx)
-        .channel_id(msg.channel_id)
-        .timeout(Duration::from_secs(60))
-        .await
-    {
-        match message.content.as_str() {
-            "1" => {
-                &msg.channel_id.say(&ctx.http, "Anime").await.unwrap();
-                category = Categories::Anime;
-            }
-            "2" => {
-                &msg.channel_id.say(&ctx.http, "Game").await.unwrap();
-                category = Categories::Game;
-            }
-            "3" => {
-                &msg.channel_id.say(&ctx.http, "Tv-Show").await.unwrap();
-                category = Categories::TV;
-            }
-            "4" => {
-                &msg.channel_id.say(&ctx.http, "Movie").await.unwrap();
-                category = Categories::Movie;
-            }
-            _ => {
-                &msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
-            }
-        }
-    };
+	if let Some(message) = &msg
+		.author
+		.await_reply(&ctx)
+		.channel_id(msg.channel_id)
+		.timeout(Duration::from_secs(60))
+		.await
+	{
+		match message.content.as_str() {
+			"1" => {
+				&msg.channel_id.say(&ctx.http, "Anime").await.unwrap();
+				category = Categories::Anime;
+			}
+			"2" => {
+				&msg.channel_id.say(&ctx.http, "Game").await.unwrap();
+				category = Categories::Game;
+			}
+			"3" => {
+				&msg.channel_id.say(&ctx.http, "Tv-Show").await.unwrap();
+				category = Categories::TV;
+			}
+			"4" => {
+				&msg.channel_id.say(&ctx.http, "Movie").await.unwrap();
+				category = Categories::Movie;
+			}
+			_ => {
+				&msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
+			}
+		}
+	};
 
-    question = MessageBuilder::new()
-        .push_line("What is the Difficulty? (Type the number of the corresponding category)")
-        .push_line("1. Easy")
-        .push_line("2. Medium")
-        .push_line("3. Hard")
-        .build();
+	question = MessageBuilder::new()
+		.push_line("What is the Difficulty? (Type the number of the corresponding category)")
+		.push_line("1. Easy")
+		.push_line("2. Medium")
+		.push_line("3. Hard")
+		.build();
 
-    msg.channel_id.say(&ctx.http, question).await?;
-    let mut difficulty = Difficulties::Easy;
+	msg.channel_id.say(&ctx.http, question).await?;
+	let mut difficulty = Difficulties::Easy;
 
-    if let Some(message) = &msg
-        .author
-        .await_reply(&ctx)
-        .channel_id(msg.channel_id)
-        .timeout(Duration::from_secs(60))
-        .await
-    {
-        match message.content.as_str() {
-            "1" => {
-                &msg.channel_id.say(&ctx.http, "Easy").await.unwrap();
-                difficulty = Difficulties::Easy;
-            }
-            "2" => {
-                &msg.channel_id.say(&ctx.http, "Medium").await.unwrap();
-                difficulty = Difficulties::Medium;
-            }
-            "3" => {
-                &msg.channel_id.say(&ctx.http, "Hard").await.unwrap();
-                difficulty = Difficulties::Hard;
-            }
-            _ => {
-                &msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
-            }
-        }
-    };
+	if let Some(message) = &msg
+		.author
+		.await_reply(&ctx)
+		.channel_id(msg.channel_id)
+		.timeout(Duration::from_secs(60))
+		.await
+	{
+		match message.content.as_str() {
+			"1" => {
+				&msg.channel_id.say(&ctx.http, "Easy").await.unwrap();
+				difficulty = Difficulties::Easy;
+			}
+			"2" => {
+				&msg.channel_id.say(&ctx.http, "Medium").await.unwrap();
+				difficulty = Difficulties::Medium;
+			}
+			"3" => {
+				&msg.channel_id.say(&ctx.http, "Hard").await.unwrap();
+				difficulty = Difficulties::Hard;
+			}
+			_ => {
+				&msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
+			}
+		}
+	};
 
-    info!("{:?}", category);
-    let mut puzzle = String::from("");
+	info!("{:?}", category);
+	let mut puzzle = String::from("");
 
-    &msg.channel_id.say(&ctx, "What is the puzzle?").await?;
+	&msg.channel_id.say(&ctx, "What is the puzzle?").await?;
 
-    if let Some(message) = &msg
-        .author
-        .await_reply(&ctx)
-        .channel_id(msg.channel_id)
-        .timeout(Duration::from_secs(60))
-        .await
-    {
-        puzzle = message.content.clone();
-    };
+	if let Some(message) = &msg
+		.author
+		.await_reply(&ctx)
+		.channel_id(msg.channel_id)
+		.timeout(Duration::from_secs(60))
+		.await
+	{
+		puzzle = message.content.clone();
+	};
 
-    let mut hint = String::from("");
+	let mut hint = String::from("");
 
-    &msg.channel_id.say(&ctx, "Hint? (y/n)").await?;
+	&msg.channel_id.say(&ctx, "Hint? (y/n)").await?;
 
-    if let Some(message) = &msg
-        .author
-        .await_reply(&ctx)
-        .channel_id(msg.channel_id)
-        .timeout(Duration::from_secs(60))
-        .await
-    {
-        if message.content == String::from("y") {
-            message.reply(&ctx.http, "What is the hint?").await?;
-            if let Some(messg) = &msg
-                .author
-                .await_reply(&ctx)
-                .channel_id(msg.channel_id)
-                .timeout(Duration::from_secs(60))
-                .await
-            {
-                hint = messg.content.clone();
-            };
-        }
-    };
+	if let Some(message) = &msg
+		.author
+		.await_reply(&ctx)
+		.channel_id(msg.channel_id)
+		.timeout(Duration::from_secs(60))
+		.await
+	{
+		if message.content == String::from("y") {
+			message.reply(&ctx.http, "What is the hint?").await?;
+			if let Some(messg) = &msg
+				.author
+				.await_reply(&ctx)
+				.channel_id(msg.channel_id)
+				.timeout(Duration::from_secs(60))
+				.await
+			{
+				hint = messg.content.clone();
+			};
+		}
+	};
 
-    let mut solution = String::from("");
+	let mut solution = String::from("");
 
-    &msg.channel_id.say(&ctx, "What is the solution?").await?;
+	&msg.channel_id.say(&ctx, "What is the solution?").await?;
 
-    if let Some(message) = &msg
-        .author
-        .await_reply(&ctx)
-        .channel_id(msg.channel_id)
-        .timeout(Duration::from_secs(60))
-        .await
-    {
-        solution = message.content.clone();
-    }
+	if let Some(message) = &msg
+		.author
+		.await_reply(&ctx)
+		.channel_id(msg.channel_id)
+		.timeout(Duration::from_secs(60))
+		.await
+	{
+		solution = message.content.clone();
+	}
 
-    let response = MessageBuilder::new()
-        .push_line(format!("Category is: {:?}", category))
-        .push_line(format!("Hint is: {}", hint))
-        .push_line(format!("Puzzle is: {}", &puzzle))
-        .push_line(format!("Solution is: {}", solution))
-        .build();
+	let response = MessageBuilder::new()
+		.push_line(format!("Category is: {:?}", category))
+		.push_line(format!("Hint is: {}", hint))
+		.push_line(format!("Puzzle is: {}", &puzzle))
+		.push_line(format!("Solution is: {}", solution))
+		.build();
 
-    &msg.channel_id.say(&ctx, response).await?;
+	&msg.channel_id.say(&ctx, response).await?;
 
-    let conn = establish_connection();
+	let conn = establish_connection();
 
-    create_charade(
-        &conn,
-        &category,
-        &puzzle.as_str(),
-        &hint.as_str(),
-        &solution.as_str(),
-        &difficulty,
-        &BigDecimal::from_u64(*msg.author.id.as_u64()).unwrap(),
-        &true,
-    );
+	create_charade(
+		&conn,
+		&category,
+		&puzzle.as_str(),
+		&hint.as_str(),
+		&solution.as_str(),
+		&difficulty,
+		&BigDecimal::from_u64(*msg.author.id.as_u64()).unwrap(),
+		&true,
+	);
 
-    Ok(())
+	Ok(())
 }
