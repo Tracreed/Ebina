@@ -1149,6 +1149,7 @@ dependencies = [
 [[package]]
 name = "osu_v2"
 version = "0.1.0"
+source = "git+https://git.fuyu.moe/Tracreed/osu_v2#913cadecaaaf22184af39d089923ac449a39919c"
 dependencies = [
  "actix-rt",
  "async-trait",

@@ -22,7 +22,7 @@ regex = "1"
 isolang = "1.0.0"
 num-format = "0.4.0"
 isocountry = "0.3.2"
-osu_v2 = { path = "../osu_v2"}
+osu_v2 = { git = "https://git.fuyu.moe/Tracreed/osu_v2"}
 read_color = "1.0.0"
 chrono = "0.4.19"
 humantime = "2.1.0"
