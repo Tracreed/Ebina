@@ -77,7 +77,7 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 		.expect("To receive message")
 		.expect("To not fail receiving")
 	{
-		message::Response::Ok => info!("Connected to VNDB api"),
+		message::Response::Ok => {},
 		response => panic!("Unexpected response={:?}", response),
 	}
 

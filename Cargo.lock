@@ -122,6 +122,15 @@ checksum = "a4521f3e3d031370679b3b140beb36dfe4801b09ac77e30c61941f97df3ef28b"
 
 [[package]]
 name = "base64"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b25d992356d2eb0ed82172f5248873db5560c4721f564b13cb5193bda5e668e"
+dependencies = [
+ "byteorder",
+]
+
+[[package]]
+name = "base64"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3441f0f7b02788e948e47f457ca01f1d7e6d92c693bc132c22b087d3141c03ff"
@@ -425,10 +434,12 @@ dependencies = [
  "isolang",
  "mangadex-api",
  "num-format",
+ "openweather",
  "osu_v2",
  "read_color",
  "regex",
  "reqwest",
+ "ron",
  "roxmltree",
  "serde",
  "serde_json",
@@ -728,6 +739,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "http_req"
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef9a6b5b2cd80630d9c6bda175408a86908d8a9c1eb5b2857206529d88d063a3"
+dependencies = [
+ "rustls 0.16.0",
+ "unicase",
+ "webpki",
+ "webpki-roots 0.18.0",
+]
+
+[[package]]
 name = "httparse"
 version = "1.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -778,7 +801,7 @@ dependencies = [
  "futures-util",
  "hyper",
  "log",
- "rustls",
+ "rustls 0.19.0",
  "tokio",
  "tokio-rustls",
  "webpki",
@@ -915,9 +938,8 @@ checksum = "c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4"
 
 [[package]]
 name = "mangadex-api"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ff53c5a96f5b37b12f7d95f06ae89c4ae29098a06b1df1dcf913bcc4d607592"
+version = "0.2.4"
+source = "git+https://gitlab.com/gondolyr/mangadex-api?branch=main#617477e576a41d10c8efb6fdac5a7116dc37e5ba"
 dependencies = [
  "chrono",
  "reqwest",
@@ -1147,9 +1169,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "openweather"
+version = "0.1.0"
+source = "git+https://github.com/Tracreed/openweather#15fd05f2786895505e4e656ce7c31166b0c2d422"
+dependencies = [
+ "http_req",
+ "log",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "thiserror",
+ "time 0.1.44",
+ "url",
+]
+
+[[package]]
 name = "osu_v2"
 version = "0.1.0"
-source = "git+https://git.fuyu.moe/Tracreed/osu_v2#913cadecaaaf22184af39d089923ac449a39919c"
+source = "git+https://git.fuyu.moe/Tracreed/osu_v2#54a30cd46cfb615acf523d46feb1e3615c2cc3bc"
 dependencies = [
  "actix-rt",
  "async-trait",
@@ -1688,7 +1725,7 @@ dependencies = [
  "native-tls",
  "percent-encoding",
  "pin-project-lite",
- "rustls",
+ "rustls 0.19.0",
  "serde",
  "serde_json",
  "serde_urlencoded",
@@ -1720,6 +1757,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ron"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "064ea8613fb712a19faf920022ec8ddf134984f100090764a4e1d768f3827f1f"
+dependencies = [
+ "base64 0.13.0",
+ "bitflags",
+ "serde",
+]
+
+[[package]]
 name = "roxmltree"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1735,6 +1783,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
 dependencies = [
  "semver",
+]
+
+[[package]]
+name = "rustls"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b25a18b1bf7387f0145e7f8324e700805aade3842dd3db2e74e4cdeb4677c09e"
+dependencies = [
+ "base64 0.10.1",
+ "log",
+ "ring",
+ "sct",
+ "webpki",
 ]
 
 [[package]]
@@ -2292,7 +2353,7 @@ version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc6844de72e57df1980054b38be3a9f4702aba4858be64dd700181a8a6d0e1b6"
 dependencies = [
- "rustls",
+ "rustls 0.19.0",
  "tokio",
  "webpki",
 ]
@@ -2658,6 +2719,15 @@ checksum = "b8e38c0608262c46d4a56202ebabdeb094cef7e560ca7a226c6bf055188aa4ea"
 dependencies = [
  "ring",
  "untrusted",
+]
+
+[[package]]
+name = "webpki-roots"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91cd5736df7f12a964a5067a12c62fa38e1bd8080aff1f80bc29be7c80d19ab4"
+dependencies = [
+ "webpki",
 ]
 
 [[package]]

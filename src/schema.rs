@@ -7,7 +7,6 @@ pub enum Categories {
     TV,
     Movie,
 }
-
 #[derive(Debug, PartialEq, DbEnum, Clone)]
 pub enum Difficulties {
     Easy, // All variants must be fieldless
@@ -29,3 +28,27 @@ table! {
         public -> Bool,
     }
 }
+
+table! {
+    feeds (id) {
+        id -> Int4,
+        server_id -> Int8,
+        channel_id -> Int8,
+        manga_id -> Int8,
+    }
+}
+
+table! {
+    roles (id) {
+        id -> Int4,
+        server_id -> Int8,
+        #[sql_name = "roles"]
+        role -> Text,
+    }
+}
+
+allow_tables_to_appear_in_same_query!(
+    charades,
+    feeds,
+    roles,
+);

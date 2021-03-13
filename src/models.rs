@@ -24,3 +24,34 @@ pub struct Charade {
     pub userid: BigDecimal,
     pub public: bool,
 }
+
+
+#[derive(Queryable, Debug)]
+pub struct Feed {
+    pub id: i32,
+    pub server: i64,
+    pub channel: i64,
+    pub manga: i64,
+}
+
+#[derive(Insertable)]
+#[table_name = "feeds"]
+pub struct NewFeed<'a> {
+    pub server_id: &'a i64,
+    pub channel_id: &'a i64,
+    pub manga_id: &'a i64,
+}
+
+#[derive(Queryable, Debug)]
+pub struct Role {
+    pub id: i32,
+    pub server: i64,
+    pub role: String,
+}
+
+#[derive(Insertable)]
+#[table_name = "roles"]
+pub struct NewRole<'a> {
+    pub server_id: &'a i64,
+    pub role: &'a String,
+}

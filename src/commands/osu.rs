@@ -16,8 +16,6 @@ use chrono::Duration;
 
 use humantime::format_duration;
 
-use tracing::{info};
-
 use num_format::{Locale, ToFormattedString};
 
 #[command]
@@ -36,10 +34,9 @@ pub async fn user(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
 	if users.user.data.len() < 1 {
 		let message = MessageBuilder::new()
 		.push("No user called ")
-		.push_safe(&username)
+		.push_mono_safe(&username)
 		.push(" found.")
 		.build();
-		info!("{:?}", message);
 		&msg.channel_id.say(&ctx, message).await?;
 		return Ok(());
 	}
@@ -48,7 +45,6 @@ pub async fn user(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
 		Some(v) => {v.mode.clone()},
 		None => {mode.clone()},
 	};
-	info!("{:?}", user);
 	msg.channel_id
 		.send_message(&ctx.http, |m| {
 			m.embed(|e| {
@@ -69,13 +65,12 @@ pub async fn user(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
 				} else {
 					e.thumbnail(&user.avatar_url);
 				}
-				if user.statistics.rank.global.is_some() {
-					e.field("Global Ranking", format!("#{}", user.statistics.rank.global.unwrap().to_formatted_string(&Locale::en)), true);
+				if user.statistics.global_rank.is_some() {
+					e.field("Global Ranking", format!("#{}", user.statistics.global_rank.unwrap().to_formatted_string(&Locale::en)), true);
 				}
 				if user.statistics.rank.country.is_some() {
 					e.field("Country Ranking", format!("#{}", user.statistics.rank.country.unwrap().to_formatted_string(&Locale::en)), true);
 				}
-				e.field("Join Date", chrono::DateTime::parse_from_str(&user.join_date, "%Y-%m-%dT%H:%M:%S%:z").unwrap(), true);
 				if user.statistics.hit_accuracy > 0.0 {
 					e.field("Accuracy", format!("{:.2}%", user.statistics.hit_accuracy), true);
 				}
@@ -105,6 +100,7 @@ pub async fn user(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
 				if user.statistics.replays_watched_by_others > 0 {
 					e.field("Replays Watched by Others", user.statistics.replays_watched_by_others.to_formatted_string(&Locale::en), true);
 				}
+				e.field("Join Date", chrono::DateTime::parse_from_str(&user.join_date, "%Y-%m-%dT%H:%M:%S%:z").unwrap(), false);
 				e
 			});
 			m

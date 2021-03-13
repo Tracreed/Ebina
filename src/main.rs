@@ -1,13 +1,3 @@
-//! Requires the 'framework' feature flag be enabled in your project's
-//! `Cargo.toml`.
-//!
-//! This can be enabled by specifying the feature in the dependency section:
-//!
-//! ```toml
-//! [dependencies.serenity]
-//! git = "https://github.com/serenity-rs/serenity.git"
-//! features = ["framework", "standard_framework"]
-//! ```
 mod commands;
 
 pub mod models;
@@ -38,6 +28,8 @@ use serenity::{
 	prelude::*,
 };
 
+use mangadex_api::v2::MangaDexV2;
+
 use std::collections::HashMap;
 use std::fs;
 
@@ -46,13 +38,7 @@ use serde_json;
 use tracing::{error, info};
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
-use self::models::{Charade, NewCharade};
-
-use commands::{charades::*, general::*, osu::*, owner::*, vndb::*, moderation::*};
-
-use bigdecimal::BigDecimal;
-
-use url::Url;
+use commands::{charades::*, general::*, osu::*, owner::*, vndb::*, moderation::*, mangadex::*, feed::*};
 
 
 pub struct ShardManagerContainer;
@@ -71,6 +57,12 @@ pub struct TagsContainer;
 
 impl TypeMapKey for TagsContainer {
 	type Value = HashMap<u64, commands::vndb::VnTagJ>;
+}
+
+pub struct MDClientContainer;
+
+impl TypeMapKey for MDClientContainer {
+	type Value = Arc<Mutex<mangadex_api::v2::MangaDexV2>>;
 }
 
 #[help]
@@ -101,7 +93,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping, quit, vn, invite)]
+#[commands(ping, quit, vn, invite, weather)]
 struct General;
 
 #[group]
@@ -119,6 +111,19 @@ struct Osu;
 #[commands(ban, kick, userinfo, guildinfo)]
 #[description = "Commands related to moderation"]
 struct Moderation;
+
+#[group]
+#[prefix = "feed"]
+#[commands(set, unset)]
+struct Feed;
+
+#[group]
+#[commands(manga)]
+#[sub_groups(feed)]
+#[default_command(manga)]
+#[prefix("md")]
+#[description = "Commands related to MangaDex"]
+struct Mangadex;
 
 #[tokio::main]
 async fn main() {
@@ -162,7 +167,8 @@ async fn main() {
 		.group(&GENERAL_GROUP)
 		.group(&CHARADES_GROUP)
 		.group(&OSU_GROUP)
-		.group(&MODERATION_GROUP);
+		.group(&MODERATION_GROUP)
+		.group(&MANGADEX_GROUP);
 
 	let mut client = Client::builder(&token)
 		.framework(framework)
@@ -179,6 +185,15 @@ async fn main() {
 		let osuclient = Mutex::new(osu_v2::client::Client::new(client_id, client_secret).await.expect("err creating osu client"));
 		data.insert::<OsuClientContainer>(osuclient);
 		data.insert::<TagsContainer>(HashMap::default());
+
+		let md_username = env::var("MD_USERNAME").expect("MD_USERNAME needs to be set");
+		let md_pass = env::var("MD_PASSWORD").expect("MD_PASSWORD needs to be set");
+		let mdclient = MangaDexV2::default();
+		mdclient.login_ajax(md_username, md_pass)
+			.remember_me(true)
+			.send()
+			.await.unwrap();
+		data.insert::<MDClientContainer>(Arc::new(Mutex::new(mdclient)).clone());
 	}
 
 	parse_tags(&client, &std::path::Path::new("./vndb-tags-2021-02-08.json")).await;
@@ -192,12 +207,13 @@ async fn main() {
 		shard_manager.lock().await.shutdown_all().await;
 	});
 
-	let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(300));
+	let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(600));
 
 	tokio::spawn(async move {
 		loop {
 			interval.tick().await;
-			mangadex_update_xml(token.clone()).await;
+			//mangadex_update_xml(token.clone()).await;
+			check_feeds(token.clone()).await;
 		}
 	});
 
@@ -211,34 +227,6 @@ pub fn establish_connection() -> PgConnection {
 	PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
 }
 
-use schema::*;
-
-pub fn create_charade<'a>(
-	conn: &PgConnection,
-	category: &'a Categories,
-	puzzle: &'a str,
-	hint: &'a str,
-	solution: &'a str,
-	difficulty: &'a Difficulties,
-	userid: &'a BigDecimal,
-	public: &'a bool,
-) -> Charade {
-	let new_charade = NewCharade {
-		category,
-		hint,
-		puzzle,
-		solution,
-		difficulty,
-		userid,
-		public,
-	};
-
-	diesel::insert_into(charades::table)
-		.values(&new_charade)
-		.get_result(conn)
-		.expect("Error saving new post")
-}
-
 async fn parse_tags(client: &Client, path: &std::path::Path) {
 	let mut data = client.data.write().await;
 	let file_data = fs::read_to_string(path).expect("unable to read json file");
@@ -247,36 +235,4 @@ async fn parse_tags(client: &Client, path: &std::path::Path) {
 	for tag in tags {
 		tags_data.insert(tag.id, tag);
 	}
-}
-
-async fn mangadex_update_xml(token: String) {
-	let http = Http::new_with_token(&token);
-	let chan = http.get_channel(698062395263942689).await.unwrap();
-	let chan_id = chan.id();
-	let response = reqwest::get("https://mangadex.org/rss/DBqT28tXwbYdhnHNgA7QZceavSFrERk3/group_id/170?h=0").await.unwrap();
-	let text = response.text().await.unwrap();
-	let doc = roxmltree::Document::parse(&text).unwrap();
-	let mut node = doc.descendants().find(|n| n.tag_name().name() == "item").unwrap()
-	.first_element_child().unwrap();
-	let title = node.text().unwrap();
-	node = node.next_sibling_element().unwrap();
-	let link = node.text().unwrap();
-	node = node.next_sibling_element().unwrap();
-	let mangalink = Url::parse(node.text().unwrap()).unwrap();
-	let manga_id = mangalink.path_segments().unwrap().last().unwrap().parse::<u64>().unwrap();
-	node = node.next_sibling_element().unwrap();
-	let pubdate = chrono::DateTime::parse_from_str(node.text().unwrap(), "%a, %d %b %Y %H:%M:%S%:z").unwrap();
-	if chrono::offset::Local::now().signed_duration_since(pubdate).num_minutes() < 5 {
-		chan_id.send_message(&http, |m| {
-			m.embed(|e| {
-				e.title(title);
-				e.url(link);
-				e.thumbnail(format!("https://mangadex.org/images/manga/{}.large.jpg", manga_id));
-				e
-			});
-			m
-		})
-		.await.unwrap();
-	}
-	println!("Title: {}, Link: {}, MangaLink: {}, Pub Date: {} cover: https://mangadex.org/images/manga/{}.large.jpg", title, link, mangalink, chrono::offset::Local::now().signed_duration_since(pubdate), manga_id);
 }

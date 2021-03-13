@@ -16,7 +16,6 @@ use crate::diesel::sql_types;
 
 use bigdecimal::{BigDecimal, FromPrimitive, ToPrimitive};
 
-use crate::create_charade;
 use crate::models::*;
 
 #[command]
@@ -132,6 +131,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
 			}
 			_ => {
 				&msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
+				return Ok(())
 			}
 		}
 	};
@@ -168,6 +168,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
 			}
 			_ => {
 				&msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
+				return Ok(())
 			}
 		}
 	};
@@ -249,4 +250,31 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
 	);
 
 	Ok(())
+}
+use crate::schema::*;
+
+pub fn create_charade<'a>(
+	conn: &PgConnection,
+	category: &'a Categories,
+	puzzle: &'a str,
+	hint: &'a str,
+	solution: &'a str,
+	difficulty: &'a Difficulties,
+	userid: &'a BigDecimal,
+	public: &'a bool,
+) -> Charade {
+	let new_charade = NewCharade {
+		category,
+		hint,
+		puzzle,
+		solution,
+		difficulty,
+		userid,
+		public,
+	};
+
+	diesel::insert_into(charades::table)
+		.values(&new_charade)
+		.get_result(conn)
+		.expect("Error saving new post")
 }
