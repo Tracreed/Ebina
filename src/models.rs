@@ -46,12 +46,12 @@ pub struct NewFeed<'a> {
 pub struct Role {
     pub id: i32,
     pub server: i64,
-    pub role: String,
+    pub data: String,
 }
 
 #[derive(Insertable)]
 #[table_name = "roles"]
 pub struct NewRole<'a> {
     pub server_id: &'a i64,
-    pub role: &'a String,
+    pub data: &'a String,
 }

@@ -58,7 +58,6 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 	for arg in args.iter::<String>() {
 		title.push_str(&format!(" {}", &arg.unwrap()));
 	}
-	info!("{}", title.trim());
 
 	let mut client = vndb::client::tokio::Client::connect().await?;
 
@@ -236,7 +235,7 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 	}
 	let re = Regex::new(r"\[url=(?P<url>.*?)\](?P<name>.*?)\[/url\]").unwrap();
 	let phonere = Regex::new(r"(^\[|\]$)").unwrap();
-
+	info!("{:?}", vn);
 	msg.channel_id
 		.send_message(&ctx.http, |m| {
 			m.embed(|e| {
@@ -273,6 +272,7 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 				}
 				e
 			});
+			info!("{:?}", m);
 			m
 		})
 		.await.unwrap();

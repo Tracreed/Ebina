@@ -74,6 +74,18 @@ pub async fn userinfo(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
 }
 
 #[command]
+pub async fn avatar(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+	let id = args.single::<u64>().unwrap_or(msg.author.id.0);
+	let user = if &msg.mentions.len() < &1 {
+		ctx.http.get_user(id).await?
+	} else {
+		msg.mentions[0].clone()
+	};
+	msg.channel_id.say(&ctx.http, &user.avatar_url().unwrap()).await.unwrap();
+	Ok(())
+}
+
+#[command]
 #[aliases("ginfo")]
 pub async fn guildinfo(ctx: &Context, msg: &Message) -> CommandResult {
 	let guild = msg.guild(ctx).await.unwrap();

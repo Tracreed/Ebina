@@ -43,7 +43,7 @@ table! {
         id -> Int4,
         server_id -> Int8,
         #[sql_name = "roles"]
-        role -> Text,
+        data -> Text,
     }
 }
 

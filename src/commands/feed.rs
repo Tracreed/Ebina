@@ -1,4 +1,4 @@
-use serenity::framework::standard::{macros::command, Args, CommandResult};
+use serenity::{framework::standard::{macros::command, Args, CommandResult}, futures::future::MapOk};
 use serenity::model::prelude::*;
 use serenity::http::Http;
 use serenity::prelude::*;
@@ -21,26 +21,26 @@ use tracing::{info};
 struct FeedGroup {
 	manga_id: u64,
 	title: String,
-	last: u64,
+	last: f64,
 	last_id: u64,
-	first: u64,
+	first: f64,
 	first_id: u64,
 	group: Vec<String>,
 	chapters: u64,
 }
 
 trait Update {
-	fn set_last(&mut self, last: u64, last_id: u64);
-	fn set_first(&mut self, first: u64, first_id: u64);
+	fn set_last(&mut self, last: f64, last_id: u64);
+	fn set_first(&mut self, first: f64, first_id: u64);
 }
 
 impl Update for FeedGroup {
-	fn set_last(&mut self, last: u64, last_id: u64) {
+	fn set_last(&mut self, last: f64, last_id: u64) {
 		self.last = last;
 		self.last_id = last_id;
 	}
 
-	fn set_first(&mut self, first: u64, first_id: u64) {
+	fn set_first(&mut self, first: f64, first_id: u64) {
 		self.first = first;
 		self.first_id = first_id;
 	}
@@ -81,11 +81,56 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 
 #[command]
 #[owners_only]
-#[min_args(1)]
 pub async fn unset(ctx: &Context, msg: &Message) -> CommandResult {
 	let channel_id = msg.channel_id;
 	let conn = establish_connection();
 	delete_feed(&conn, &(channel_id.0 as i64));
+	Ok(())
+}
+
+#[command]
+#[owners_only]
+pub async fn role(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+	let manga_id = args.single::<u64>()?;
+	let guild_id = msg.guild_id.unwrap();
+	let role_id: u64;
+	let connection = establish_connection();
+
+	if msg.mention_roles.len() > 0 {
+		role_id = msg.mention_roles[0].0;
+	} else {
+		return Ok(());
+	}
+
+	use crate::schema::roles::dsl::*;
+
+	let mut map: HashMap<u64, u64>;
+
+	let roles_res = roles
+		.filter(crate::schema::roles::columns::server_id.eq(guild_id.0 as i64))
+		.load::<crate::models::Role>(&connection)
+		.unwrap();
+	if roles_res.len() > 0 {
+		map = ron::from_str(&roles_res[0].data).unwrap_or(HashMap::new());
+	} else {
+		map = HashMap::new();
+	}
+
+	map.insert(manga_id, role_id);
+
+	if roles_res.len() > 0 {
+		diesel::update(roles).set(data.eq(ron::to_string(&map).unwrap())).execute(&connection).unwrap();
+	} else {
+		let new_role = crate::models::NewRole{
+			server_id: &(guild_id.0 as i64),
+			data: &ron::to_string(&map).unwrap()
+		};
+		diesel::insert_into(crate::schema::roles::table)
+		.values(new_role)
+		.get_result::<crate::models::Role>(&connection)
+		.expect("Error adding new role");
+	}
+
 	Ok(())
 }
 
@@ -97,8 +142,6 @@ pub async fn check_feeds(token: String) {
 	let connection = establish_connection();
 
 	let http = Http::new_with_token(&token);
-
-	
 
 	let md_client = MangaDexV2::default();
 
@@ -113,6 +156,12 @@ pub async fn check_feeds(token: String) {
 			.filter(crate::schema::roles::columns::server_id.eq(feed.server as i64))
 			.load::<crate::models::Role>(&connection)
 			.unwrap();
+		let role_data: HashMap<u64, u64>;
+		if roles_res.len() > 0 {
+			role_data = ron::from_str(&roles_res[0].data).unwrap();
+		} else {
+			role_data = HashMap::new();
+		}
 		let mut chapters_group = HashMap::new();
 		for chapter in chapters {
 			if chrono::offset::Local::now().signed_duration_since(*chapter.timestamp()).num_minutes() > 10 {
@@ -127,9 +176,9 @@ pub async fn check_feeds(token: String) {
 			let feed_group = FeedGroup {
 			    manga_id: *chapter.manga_id(),
 			    title: chapter.manga_title().to_string(),
-			    last: chapter.chapter().parse::<u64>().unwrap(),
+			    last: chapter.chapter().parse::<f64>().unwrap(),
 			    last_id: *chapter.id(),
-			    first: chapter.chapter().parse::<u64>().unwrap(),
+			    first: chapter.chapter().parse::<f64>().unwrap(), 
 			    first_id: *chapter.id(),
 			    group: groups_vec,
 				chapters: 1,
@@ -143,12 +192,12 @@ pub async fn check_feeds(token: String) {
 				},
 			};
 
-			if chapter_group.last < chapter.chapter().parse::<u64>().unwrap() {
-				chapter_group.set_last(chapter.chapter().parse::<u64>().unwrap(), *chapter.id());
+			if chapter_group.last < chapter.chapter().parse::<f64>().unwrap() {
+				chapter_group.set_last(chapter.chapter().parse::<f64>().unwrap(), *chapter.id());
 			}
 
-			if chapter_group.first > chapter.chapter().parse::<u64>().unwrap() {
-				chapter_group.set_first(chapter.chapter().parse::<u64>().unwrap(), *chapter.id());
+			if chapter_group.first > chapter.chapter().parse::<f64>().unwrap() {
+				chapter_group.set_first(chapter.chapter().parse::<f64>().unwrap(), *chapter.id());
 			}
 		}
 		let channel = http.get_channel(feed.channel as u64).await.unwrap().guild().unwrap();
@@ -168,13 +217,17 @@ pub async fn check_feeds(token: String) {
 						a.url("https://mangadex.org/");
 						a
 					});
+					e.thumbnail(format!("https://mangadex.org/images/manga/{}.jpg", chapter.manga_id));
 					e.color(Colour::from_rgb(246, 131, 40));
-					e.footer(|f| {
-						f.text(chapter.group[0].clone());
-						f
-					});
 					e
 				});
+				if role_data.contains_key(&chapter.manga_id) {
+					let r = RoleId{0: *role_data.get(&chapter.manga_id).unwrap()};
+					let message = MessageBuilder::new()
+					.mention(&r)
+					.build();
+					m.content(message);
+				}
 				m
 			})
 			.await.unwrap();

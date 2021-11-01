@@ -84,7 +84,8 @@ struct Handler;
 impl EventHandler for Handler {
 	async fn ready(&self, ctx: Context, ready: Ready) {
 		info!("Connected as {}", ready.user.name);
-		info!("Guilds in cache: {}", ctx.cache.guilds().await.len());
+		let guilds = ctx.cache.guilds().await.len();
+		info!("Guilds in cache: {}", guilds);
 	}
 
 	async fn resume(&self, _: Context, _: ResumedEvent) {
@@ -93,7 +94,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping, quit, vn, invite, weather)]
+#[commands(ping, quit, vn, invite, weather, mpv)]
 struct General;
 
 #[group]
@@ -101,20 +102,20 @@ struct General;
 struct Charades;
 
 #[group]
-#[commands(user)]
+#[commands(user, userimg)]
 #[prefix("osu")]
 #[default_command(user)]
 #[description = "Commands related to the Osu! Rhythm game."]
 struct Osu;
 
 #[group]
-#[commands(ban, kick, userinfo, guildinfo)]
+#[commands(ban, kick, userinfo, guildinfo, avatar)]
 #[description = "Commands related to moderation"]
 struct Moderation;
 
 #[group]
 #[prefix = "feed"]
-#[commands(set, unset)]
+#[commands(set, unset, role)]
 struct Feed;
 
 #[group]

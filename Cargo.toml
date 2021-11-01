@@ -32,6 +32,8 @@ url = "2.2.1"
 mangadex-api = { git = "https://gitlab.com/gondolyr/mangadex-api", branch = "main"}
 openweather = { git = "https://github.com/Tracreed/openweather"}
 ron = "0.6.4"
+magick_rust = "0.14.0"
+tempfile = "3.2.0"
 
 [features]
 numeric = ["bigdecimal"]

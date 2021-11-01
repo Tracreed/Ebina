@@ -79,7 +79,12 @@ pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
 			None => {
 				msg.channel_id
 					.send_message(&ctx.http, |m| {
-						m.embed(|e| e.title("Time is up"));
+						m.embed(|e| {
+							e.title("Time is up");
+							e.description(format!("The right answer was: {}", results[0].solution));
+							e
+						}
+						);
 
 						m
 					})

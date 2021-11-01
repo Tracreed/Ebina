@@ -5,7 +5,14 @@ use serenity::client::bridge::gateway::ShardId;
 use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
-
+use tracing::{error, info};
+use std::os::unix::net::UnixStream;
+use std::io::Write;
+use std::io::prelude::*;
+use std::io::BufReader;
+use serde_json::{Value};
+use humantime::format_duration;
+use chrono::Duration;
 
 extern crate openweather;
 
@@ -107,4 +114,40 @@ pub async fn weather(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 	})
 	.await.unwrap();
 	Ok(())
+}
+
+#[command]
+pub async fn mpv(ctx: &Context, msg: &Message) -> CommandResult {
+	let pos = get_mpv_property("time-pos").unwrap().replace("\"", "").parse::<f64>().unwrap();
+	let title = get_mpv_property("media-title").unwrap();
+
+	&msg.channel_id.send_message(&ctx.http, |m| {
+		m.embed(|e| {
+			e.title(title);
+			let dur = Duration::seconds(pos as i64);
+			e.field("Position", format_duration(dur.to_std().unwrap()).to_string(), true);
+			e
+		});
+		m
+	}).await.unwrap();
+
+	info!("{}", pos);
+	Ok(())
+}
+
+fn get_mpv_property(property: &str) -> Result<String, &'static str> {
+	let mut socket = match UnixStream::connect("/home/trac/.config/mpv/socket") {
+		Ok(sock) => sock,
+		Err(e) => {
+			error!("Couldn't connect: {:?}", e);
+			return Err("Couldn't connect to socket");
+		}
+	};
+	let string_buf = format!("{{ \"command\": [\"get_property_string\", \"{}\"] }}\n", property);
+	socket.write_all(string_buf.as_bytes()).unwrap();
+    let mut response = String::new();
+	let mut reader = BufReader::new(socket);
+	reader.read_line(&mut response).unwrap();
+	let v: Value = serde_json::from_str(&response).unwrap();
+	Ok(v["data"].to_string())
 }
