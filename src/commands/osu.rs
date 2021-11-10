@@ -153,12 +153,13 @@ pub async fn userimg(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 		m
 	})
 	.await?;
-	Ok(())	
+	Ok(())
 }
 
 async fn gen_image(user: &Box<osu_v2::user::User>, usermode: String) {
 	magick_wand_genesis();
 	info!("{}", &user.avatar_url);
+	let asset_folder = "./assets/";
 	let avatar_url: String;
 	if user.avatar_url.chars().nth(0).unwrap() == '/' {
 		avatar_url = format!("https://osu.ppy.sh{}", &user.avatar_url);
@@ -180,24 +181,24 @@ async fn gen_image(user: &Box<osu_v2::user::User>, usermode: String) {
 	avatar.resize_image(512, 512, 0);
 
 	let avatar_round = MagickWand::new();
-	avatar_round.read_image("./avatar-remove.png").unwrap();
+	avatar_round.read_image("./assets/avatar-remove.png").unwrap();
 	avatar.compose_images(&avatar_round, 2, true, 0, 0).unwrap();
 
 	let mode_img = MagickWand::new();
-	mode_img.read_image(format!("./osu_icons/{}.png", usermode).as_str()).unwrap();
+	mode_img.read_image(format!("./assets/osu_icons/{}.png", usermode).as_str()).unwrap();
 	mode_img.fit(51, 51);
 
 	let progress_bar = MagickWand::new();
-	progress_bar.read_image("./progress-bar.png").unwrap();
+	progress_bar.read_image("./assets/progress-bar.png").unwrap();
 
 	let progress_bar_bg = MagickWand::new();
-	progress_bar_bg.read_image("./progress-bar-bg.png").unwrap();
+	progress_bar_bg.read_image("./assets/progress-bar-bg.png").unwrap();
 	let bar_width = ((progress_bar.get_image_width() / 100) as f64 * user.statistics.level.progress as f64) as isize;
 	info!("{}", bar_width);
 	progress_bar_bg.compose_images(&progress_bar, 2, true, (-(progress_bar.get_image_width() as isize) + bar_width) as isize, 0).unwrap();
 
 	let progress_bar_round = MagickWand::new();
-	progress_bar_round.read_image("./progress-bar-bg-remove.png").unwrap();
+	progress_bar_round.read_image("./assets/progress-bar-bg-remove.png").unwrap();
 	progress_bar_bg.compose_images(&progress_bar_round, 2, true, 0, 0).unwrap();
 
 	add_text(&mut wand, &user.username.as_str(), 347.0, 611.0, "Torus", 60.0, "white");
@@ -238,7 +239,7 @@ async fn gen_image(user: &Box<osu_v2::user::User>, usermode: String) {
 	wand.compose_images(&avatar, 2, true, 91, 39).unwrap();
 	wand.compose_images(&mode_img, 2, true, 1829, 28).unwrap();
 	wand.compose_images(&progress_bar_bg, 2, true, 95, 800).unwrap();
-	wand.write_image("./test.png").unwrap();
+	wand.write_image("./assets/test.png").unwrap();
 	std::fs::remove_file(format!("./{}", &user.id)).unwrap();
 }
 

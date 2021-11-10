@@ -180,7 +180,7 @@ async fn main() {
 		data.insert::<TagsContainer>(HashMap::default());
 	}
 
-	parse_tags(&client, &std::path::Path::new("./vndb-tags-2021-02-08.json")).await;
+	parse_tags(&client, &std::path::Path::new("./assets/vndb-tags-2021-02-08.json")).await;
 
 	let shard_manager = client.shard_manager.clone();
 
