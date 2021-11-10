@@ -149,7 +149,7 @@ pub async fn userimg(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 
 	gen_image(user, usermode).await;
 
-	msg.channel_id.send_files(&ctx.http, vec!["./test.png"], |m| {
+	msg.channel_id.send_files(&ctx.http, vec!["./assets/test.png"], |m| {
 		m
 	})
 	.await?;
@@ -171,7 +171,7 @@ async fn gen_image(user: &Box<osu_v2::user::User>, usermode: String) {
 	dest.write_all(&avatar_res.bytes().await.unwrap()).unwrap();
 	let mut wand = MagickWand::new();
 
-	wand.read_image("./Ebina-osu-card.png").unwrap();
+	wand.read_image("./assets/Ebina-osu-card.png").unwrap();
 
 	let avatar = MagickWand::new();
 
