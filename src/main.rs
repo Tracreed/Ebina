@@ -135,6 +135,7 @@ async fn main() {
 	tracing::subscriber::set_global_default(subscriber).expect("Failed to start the logger");
 
 	let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
+	let prefix = env::var("PREFIX").expect("Expected a prefix in the environment");
 
 	let http = Http::new_with_token(&token);
 
@@ -153,7 +154,7 @@ async fn main() {
 	let framework = StandardFramework::new()
 		.configure(|c| {
 			c.owners(owners)
-				.prefixes(vec![".", "ebi "])
+				.prefixes(vec![prefix.as_str(), "ebina "])
 				.on_mention(Some(bot_id))
 		})
 		.help(&MY_HELP)
