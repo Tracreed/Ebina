@@ -28,8 +28,6 @@ use serenity::{
 	prelude::*,
 };
 
-use mangadex_api::v2::MangaDexV2;
-
 use std::collections::HashMap;
 use std::fs;
 
@@ -38,7 +36,7 @@ use serde_json;
 use tracing::{error, info};
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
-use commands::{charades::*, general::*, osu::*, owner::*, vndb::*, moderation::*, mangadex::*, feed::*};
+use commands::{charades::*, general::*, osu::*, owner::*, vndb::*, moderation::*, mangadex::*};
 
 
 pub struct ShardManagerContainer;
@@ -57,12 +55,6 @@ pub struct TagsContainer;
 
 impl TypeMapKey for TagsContainer {
 	type Value = HashMap<u64, commands::vndb::VnTagJ>;
-}
-
-pub struct MDClientContainer;
-
-impl TypeMapKey for MDClientContainer {
-	type Value = Arc<Mutex<mangadex_api::v2::MangaDexV2>>;
 }
 
 #[help]
@@ -113,14 +105,14 @@ struct Osu;
 #[description = "Commands related to moderation"]
 struct Moderation;
 
-#[group]
+/* #[group]
 #[prefix = "feed"]
 #[commands(set, unset, role)]
-struct Feed;
+struct Feed; */
 
 #[group]
 #[commands(manga)]
-#[sub_groups(feed)]
+//#[sub_groups(feed)]
 #[default_command(manga)]
 #[prefix("md")]
 #[description = "Commands related to MangaDex"]
@@ -161,7 +153,7 @@ async fn main() {
 	let framework = StandardFramework::new()
 		.configure(|c| {
 			c.owners(owners)
-				.prefixes(vec!["~", "ebina "])
+				.prefixes(vec![".", "ebi "])
 				.on_mention(Some(bot_id))
 		})
 		.help(&MY_HELP)
@@ -186,15 +178,6 @@ async fn main() {
 		let osuclient = Mutex::new(osu_v2::client::Client::new(client_id, client_secret).await.expect("err creating osu client"));
 		data.insert::<OsuClientContainer>(osuclient);
 		data.insert::<TagsContainer>(HashMap::default());
-
-		let md_username = env::var("MD_USERNAME").expect("MD_USERNAME needs to be set");
-		let md_pass = env::var("MD_PASSWORD").expect("MD_PASSWORD needs to be set");
-		let mdclient = MangaDexV2::default();
-		mdclient.login_ajax(md_username, md_pass)
-			.remember_me(true)
-			.send()
-			.await.unwrap();
-		data.insert::<MDClientContainer>(Arc::new(Mutex::new(mdclient)).clone());
 	}
 
 	parse_tags(&client, &std::path::Path::new("./vndb-tags-2021-02-08.json")).await;
@@ -208,7 +191,7 @@ async fn main() {
 		shard_manager.lock().await.shutdown_all().await;
 	});
 
-	let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(600));
+	/* let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(600));
 
 	tokio::spawn(async move {
 		loop {
@@ -216,7 +199,7 @@ async fn main() {
 			//mangadex_update_xml(token.clone()).await;
 			check_feeds(token.clone()).await;
 		}
-	});
+	}); */
 
 	if let Err(why) = client.start_autosharded().await {
 		error!("Client error: {:?}", why);

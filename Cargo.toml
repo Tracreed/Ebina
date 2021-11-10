@@ -29,11 +29,12 @@ humantime = "2.1.0"
 reqwest = "0.11.1"
 roxmltree = "0.14.0"
 url = "2.2.1"
-mangadex-api = { git = "https://gitlab.com/gondolyr/mangadex-api", branch = "main"}
+mangadex-api = { git = "https://gitlab.com/gondolyr/mangadex-api", branch = "main", features = ["multi-thread"] }
 openweather = { git = "https://github.com/Tracreed/openweather"}
-ron = "0.6.4"
-magick_rust = "0.14.0"
+ron = "0.7.0"
+magick_rust = "0.15.0"
 tempfile = "3.2.0"
+uuid = "0.8.2"
 
 [features]
 numeric = ["bigdecimal"]

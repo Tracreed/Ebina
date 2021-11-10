@@ -4,9 +4,10 @@ use serenity::http::Http;
 use serenity::prelude::*;
 use serenity::utils::*;
 use serenity::utils::MessageBuilder;
-use crate::{MDClientContainer, establish_connection};
-use mangadex_api::v2::{responses::*, MangaDexV2};
+use crate::establish_connection;
+use mangadex_api::MangaDexClient;
 use ron::*;
+use uuid::Uuid;
 
 use crate::models::*;
 use crate::schema::*;
@@ -51,12 +52,17 @@ impl Update for FeedGroup {
 #[min_args(1)]
 pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 	let data = ctx.data.read().await;
-	let client = data.get::<MDClientContainer>().unwrap().lock().await;
+	let client = MangaDexClient::default();
 	let guild_id = msg.guild_id.unwrap();
 	let channel_id = msg.channel_id;
-	let group_id = args.single::<i64>().unwrap();
-	let group_res = client.group(group_id as u64).send().await?.ok().unwrap();
-	let group = group_res.data();
+	let group_id = Uuid::parse_str(args.single::<String>().unwrap().as_str()).unwrap();
+	let group_res = client.scanlation_group()
+		.get()
+		.group_id(&group_id)
+		.build()?
+		.send()
+		.await?;
+	let group = group_res.data;
 	let conn = establish_connection();
 
 	create_feed(&conn, &(guild_id.0 as i64), &(channel_id.0 as i64), &group_id);
@@ -143,7 +149,7 @@ pub async fn check_feeds(token: String) {
 
 	let http = Http::new_with_token(&token);
 
-	let md_client = MangaDexV2::default();
+	let md_client = MangaDexClient::default();
 
 	let results = feeds
 		.load::<Feed>(&connection)
@@ -235,7 +241,7 @@ pub async fn check_feeds(token: String) {
 	}
 }
 
-pub fn create_feed<'a>(conn: &PgConnection, server: &'a i64, channel: &'a i64, manga: &'a i64) -> Feed {
+pub fn create_feed<'a>(conn: &PgConnection, server: &'a i64, channel: &'a i64, manga: &'a String) -> Feed {
 	let new_feed = NewFeed {
 		server_id: server,
 		channel_id: channel,

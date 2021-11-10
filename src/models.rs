@@ -31,7 +31,7 @@ pub struct Feed {
     pub id: i32,
     pub server: i64,
     pub channel: i64,
-    pub manga: i64,
+    pub manga: String,
 }
 
 #[derive(Insertable)]
@@ -39,7 +39,7 @@ pub struct Feed {
 pub struct NewFeed<'a> {
     pub server_id: &'a i64,
     pub channel_id: &'a i64,
-    pub manga_id: &'a i64,
+    pub manga_id: &'a String,
 }
 
 #[derive(Queryable, Debug)]

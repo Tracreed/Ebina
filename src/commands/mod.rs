@@ -5,4 +5,4 @@ pub mod owner;
 pub mod vndb;
 pub mod moderation;
 pub mod mangadex;
-pub mod feed;
+//pub mod feed;

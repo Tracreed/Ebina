@@ -34,7 +34,7 @@ table! {
         id -> Int4,
         server_id -> Int8,
         channel_id -> Int8,
-        manga_id -> Int8,
+        manga_id -> Text,
     }
 }
 
