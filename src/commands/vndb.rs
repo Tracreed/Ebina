@@ -92,7 +92,7 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let vns = vnns.0;
 
-    if vns.len() < 1 {
+    if vns.is_empty() {
         msg.reply(&ctx.http, "No results :(").await?;
         return Ok(());
     }
@@ -134,14 +134,11 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     {
         let num: i32;
         let lenvn = vns.len() as i32;
-        num = match message.content.parse::<i32>() {
-            Ok(v) => v,
-            Err(_) => -1,
-        };
+        num = message.content.parse::<i32>().unwrap_or(-1);
         if num <= lenvn && num > 0 {
             vn = &vns[((num - 1) as usize)];
             message.delete(&ctx.http).await?;
-        } else if message.content.to_lowercase() == "cancel".to_string() {
+        } else if message.content.to_lowercase() == *"cancel" {
             cancel = true;
             message.delete(&ctx.http).await?;
         }
@@ -164,10 +161,8 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let mut developers: Vec<vndb::protocol::message::response::results::ReleaseProducer> = vec![];
     for rel in releases {
         for producer in rel.producers {
-            if producer.developer {
-                if !developers.iter().any(|dev| dev.id == producer.id) {
-                    developers.push(producer);
-                }
+            if producer.developer && !developers.iter().any(|dev| dev.id == producer.id) {
+                developers.push(producer);
             }
         }
     }
@@ -194,7 +189,7 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     };
 
     let mut languages = Vec::<String>::new();
-    if vn.languages.len() > 0 {
+    if !vn.languages.is_empty() {
         for lang in &vn.languages {
             let is;
             if lang.len() > 3 {
@@ -221,11 +216,11 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     tags.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
 
     let mut tags_string = Vec::<String>::new();
-    tags.truncate(10 as usize);
+    tags.truncate(10_usize);
 
-    if tags.len() > 0 {
+    if !tags.is_empty() {
         for tag in &tags {
-            if &tag.spoiler > &0 {
+            if tag.spoiler > 0 {
                 continue;
             };
             let tag_data = match tags_data.get(&tag.id) {
@@ -259,7 +254,7 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                         true,
                     );
                 }
-                if length != "" {
+                if !length.is_empty() {
                     e.field("Length", length, true);
                 }
                 e.field("Popularity", vn.popularity, true);
@@ -270,16 +265,16 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                         true,
                     );
                 }
-                if devstring.len() > 0 {
+                if !devstring.is_empty() {
                     e.field("Developers", devstring.join(" & "), true);
                 }
-                if languages.len() > 0 {
+                if !languages.is_empty() {
                     e.field("Languages", languages.join(", "), true);
                 }
                 if vn.original.is_some() {
                     e.field("Original title", vn.original.as_ref().unwrap(), true);
                 }
-                if tags.len() > 0 {
+                if !tags.is_empty() {
                     e.field("Tags", tags_string.join(", "), true);
                 }
                 e
@@ -333,9 +328,11 @@ async fn get_vn(
             Ok((vnn, client))
         }
 
-        vndb::protocol::Response::Ok => Err("Recieved okay instead of vn")?,
-        vndb::protocol::Response::DBstats(_) => Err("Recieved wrong type")?,
-        vndb::protocol::Response::Error(why) => Err(format!("Something went wrong: {}", why))?,
+        vndb::protocol::Response::Ok => return Err("Recieved okay instead of vn".into()),
+        vndb::protocol::Response::DBstats(_) => return Err("Recieved wrong type".into()),
+        vndb::protocol::Response::Error(why) => {
+            return Err(format!("Something went wrong: {}", why).into())
+        }
     };
     vn
 }
@@ -368,9 +365,11 @@ async fn get_release(
             Ok(vnn)
         }
 
-        vndb::protocol::Response::Ok => Err("Recieved okay instead of vn")?,
-        vndb::protocol::Response::DBstats(_) => Err("Recieved wrong type")?,
-        vndb::protocol::Response::Error(why) => Err(format!("Something went wrong: {}", why))?,
+        vndb::protocol::Response::Ok => return Err("Recieved okay instead of vn".into()),
+        vndb::protocol::Response::DBstats(_) => return Err("Recieved wrong type".into()),
+        vndb::protocol::Response::Error(why) => {
+            return Err(format!("Something went wrong: {}", why).into())
+        }
     };
     release
 }

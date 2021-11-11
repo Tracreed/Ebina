@@ -203,7 +203,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
         .timeout(Duration::from_secs(60))
         .await
     {
-        if message.content == String::from("y") {
+        if message.content == *"y" {
             message.reply(&ctx.http, "What is the hint?").await?;
             if let Some(messg) = &msg
                 .author
@@ -244,39 +244,22 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
 
     create_charade(
         &conn,
-        &category,
-        &puzzle.as_str(),
-        &hint.as_str(),
-        &solution.as_str(),
-        &difficulty,
-        &BigDecimal::from_u64(*msg.author.id.as_u64()).unwrap(),
-        &true,
+        NewCharade {
+            category: &category,
+            puzzle: puzzle.as_str(),
+            hint: hint.as_str(),
+            solution: solution.as_str(),
+            difficulty: &difficulty,
+            userid: &BigDecimal::from_u64(*msg.author.id.as_u64()).unwrap(),
+            public: &true,
+        },
     );
 
     Ok(())
 }
 use crate::schema::*;
 
-pub fn create_charade<'a>(
-    conn: &PgConnection,
-    category: &'a Categories,
-    puzzle: &'a str,
-    hint: &'a str,
-    solution: &'a str,
-    difficulty: &'a Difficulties,
-    userid: &'a BigDecimal,
-    public: &'a bool,
-) -> Charade {
-    let new_charade = NewCharade {
-        category,
-        hint,
-        puzzle,
-        solution,
-        difficulty,
-        userid,
-        public,
-    };
-
+pub fn create_charade(conn: &PgConnection, new_charade: NewCharade) -> Charade {
     diesel::insert_into(charades::table)
         .values(&new_charade)
         .get_result(conn)

@@ -33,7 +33,6 @@ mangadex-api = { git = "https://gitlab.com/gondolyr/mangadex-api", branch = "mai
 openweather = { git = "https://github.com/Tracreed/openweather"}
 ron = "0.7.0"
 magick_rust = "0.15.0"
-tempfile = "3.2.0"
 uuid = "0.8.2"
 
 [features]

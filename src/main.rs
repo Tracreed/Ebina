@@ -31,8 +31,6 @@ use serenity::{
 use std::collections::HashMap;
 use std::fs;
 
-use serde_json;
-
 use tracing::{error, info};
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
@@ -65,7 +63,7 @@ async fn my_help(
     groups: &[&'static CommandGroup],
     owners: HashSet<UserId>,
 ) -> CommandResult {
-    let _ = help_commands::with_embeds(context, msg, args, &help_options, groups, owners).await;
+    let _ = help_commands::with_embeds(context, msg, args, help_options, groups, owners).await;
     Ok(())
 }
 
@@ -186,7 +184,7 @@ async fn main() {
 
     parse_tags(
         &client,
-        &std::path::Path::new("./assets/vndb-tags-2021-02-08.json"),
+        std::path::Path::new("./assets/vndb-tags-2021-02-08.json"),
     )
     .await;
 
@@ -216,7 +214,8 @@ async fn main() {
 
 pub fn establish_connection() -> PgConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
+    PgConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
 async fn parse_tags(client: &Client, path: &std::path::Path) {

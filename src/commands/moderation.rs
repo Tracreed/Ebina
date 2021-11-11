@@ -42,13 +42,13 @@ pub async fn kick(ctx: &Context, msg: &Message) -> CommandResult {
 pub async fn userinfo(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild = msg.guild(ctx).await.unwrap();
     let id = args.single::<u64>().unwrap_or(msg.author.id.0);
-    let user = if &msg.mentions.len() < &1 {
+    let user = if msg.mentions.is_empty() {
         ctx.http.get_user(id).await?
     } else {
         msg.mentions[0].clone()
     };
     let gmember = guild.member(&ctx, &user.id).await.unwrap();
-    let roles = gmember.roles(&ctx).await.unwrap_or(Vec::new());
+    let roles = gmember.roles(&ctx).await.unwrap_or_default();
     msg.channel_id
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
@@ -56,7 +56,7 @@ pub async fn userinfo(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
                 let message = MessageBuilder::new().mention(&user).build();
                 e.description(message);
                 e.field("ID", format!("`{}`", &user.id), true);
-                if roles.len() > 0 {
+                if !roles.is_empty() {
                     let mut mess = MessageBuilder::new();
                     for role in roles {
                         mess.mention(&role);
@@ -65,7 +65,7 @@ pub async fn userinfo(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
 
                     e.field("Roles", mess.build(), true);
                 }
-                e.field("​Bot", format!("{}", gmember.user.bot), true);
+                e.field("Bot", format!("{}", gmember.user.bot), true);
                 if gmember.joined_at.is_some() {
                     e.field(
                         "Member since",
@@ -90,7 +90,7 @@ pub async fn userinfo(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
 #[command]
 pub async fn avatar(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let id = args.single::<u64>().unwrap_or(msg.author.id.0);
-    let user = if &msg.mentions.len() < &1 {
+    let user = if msg.mentions.is_empty() {
         ctx.http.get_user(id).await?
     } else {
         msg.mentions[0].clone()

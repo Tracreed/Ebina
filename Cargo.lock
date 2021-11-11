@@ -532,7 +532,6 @@ dependencies = [
  "serde",
  "serde_json",
  "serenity",
- "tempfile",
  "tokio",
  "tracing",
  "tracing-futures",

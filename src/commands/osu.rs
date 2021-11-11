@@ -4,6 +4,7 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 use serenity::utils::*;
+use std::env::temp_dir;
 use std::fs::File;
 use std::io::Write;
 
@@ -35,9 +36,9 @@ pub async fn user(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
         Ok(v) => v,
         Err(_) => { &msg.author.name }.to_string(),
     };
-    let mode = args.single::<String>().unwrap_or("".to_string());
+    let mode = args.single::<String>().unwrap_or_else(|_| "".to_string());
     let users = client.search_user(username.clone()).await?;
-    if users.user.data.len() < 1 {
+    if users.user.data.is_empty() {
         let message = MessageBuilder::new()
             .push("No user called ")
             .push_mono_safe(&username)
@@ -77,7 +78,7 @@ pub async fn user(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
                 } else {
                     e.color(Colour::from_rgb(240, 110, 170));
                 }
-                if user.avatar_url.chars().nth(0).unwrap() == '/' {
+                if user.avatar_url.starts_with('/') {
                     e.thumbnail(format!("https://osu.ppy.sh{}", &user.avatar_url));
                 } else {
                     e.thumbnail(&user.avatar_url);
@@ -202,9 +203,9 @@ pub async fn userimg(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
         Ok(v) => v,
         Err(_) => { &msg.author.name }.to_string(),
     };
-    let mode = args.single::<String>().unwrap_or("".to_string());
+    let mode = args.single::<String>().unwrap_or_else(|_| "".to_string());
     let users = client.search_user(username.clone()).await?;
-    if users.user.data.len() < 1 {
+    if users.user.data.is_empty() {
         let message = MessageBuilder::new()
             .push("No user called ")
             .push_mono_safe(&username)
@@ -219,19 +220,29 @@ pub async fn userimg(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
         None => mode.clone(),
     };
 
-    gen_image(user, usermode).await;
+    let mut temp_file = temp_dir();
+    temp_file.push(format!("{}", &user.id));
+    temp_file.set_extension("jpeg");
+
+    let mut tmp = std::fs::File::create(&temp_file).unwrap();
+
+    let image_data = gen_image(user, usermode).await;
+
+    tmp.write_all(&image_data)?;
 
     msg.channel_id
-        .send_files(&ctx.http, vec!["./assets/test.png"], |m| m)
+        .send_files(&ctx.http, vec![temp_file.to_str().unwrap()], |m| m)
         .await?;
+
+    std::fs::remove_file(&temp_file)?;
     Ok(())
 }
 
-async fn gen_image(user: &Box<osu_v2::user::User>, usermode: String) {
+async fn gen_image(user: &'_ osu_v2::user::User, usermode: String) -> Vec<u8> {
     magick_wand_genesis();
     info!("{}", &user.avatar_url);
     let avatar_url: String;
-    if user.avatar_url.chars().nth(0).unwrap() == '/' {
+    if user.avatar_url.starts_with('/') {
         avatar_url = format!("https://osu.ppy.sh{}", &user.avatar_url);
     } else {
         avatar_url = user.avatar_url.clone();
@@ -296,7 +307,7 @@ async fn gen_image(user: &Box<osu_v2::user::User>, usermode: String) {
 
     add_text(
         &mut wand,
-        &user.username.as_str(),
+        user.username.as_str(),
         347.0,
         611.0,
         "Torus",
@@ -305,7 +316,7 @@ async fn gen_image(user: &Box<osu_v2::user::User>, usermode: String) {
     );
     add_text(
         &mut wand,
-        &user.statistics.level.current.to_string().as_str(),
+        user.statistics.level.current.to_string().as_str(),
         291.0,
         788.0,
         "Torus",
@@ -429,8 +440,7 @@ async fn gen_image(user: &Box<osu_v2::user::User>, usermode: String) {
     wand.compose_images(&mode_img, 2, true, 1829, 28).unwrap();
     wand.compose_images(&progress_bar_bg, 2, true, 95, 800)
         .unwrap();
-    wand.write_image("./assets/test.png").unwrap();
-    std::fs::remove_file(format!("./{}", &user.id)).unwrap();
+    wand.write_image_blob("JPEG").unwrap()
 }
 
 fn add_text(
