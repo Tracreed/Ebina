@@ -25,7 +25,6 @@ pub struct Charade {
     pub public: bool,
 }
 
-
 #[derive(Queryable, Debug)]
 pub struct Feed {
     pub id: i32,
