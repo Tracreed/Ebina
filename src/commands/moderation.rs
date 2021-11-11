@@ -13,7 +13,7 @@ pub async fn ban(ctx: &Context, msg: &Message) -> CommandResult {
         let _ = match guild.ban(ctx, user, 1).await {
             Ok(v) => v,
             Err(why) => {
-                &msg.channel_id.say(&ctx, why).await?;
+                msg.channel_id.say(&ctx, why).await?;
             }
         };
     }

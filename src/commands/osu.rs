@@ -6,11 +6,10 @@ use serenity::utils::MessageBuilder;
 use serenity::utils::*;
 use std::fs::File;
 use std::io::Write;
-use tempfile::tempfile_in;
 
 extern crate dotenv;
 
-use tracing::{error, info};
+use tracing::info;
 
 use osu_v2::user::UserMethods;
 use read_color::*;
@@ -44,7 +43,7 @@ pub async fn user(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
             .push_mono_safe(&username)
             .push(" found.")
             .build();
-        &msg.channel_id.say(&ctx, message).await?;
+        msg.channel_id.say(&ctx, message).await?;
         return Ok(());
     }
     let user = &client.get_user(users.user.data[0].id, mode.clone()).await?;
@@ -211,7 +210,7 @@ pub async fn userimg(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
             .push_mono_safe(&username)
             .push(" found.")
             .build();
-        &msg.channel_id.say(&ctx, message).await?;
+        msg.channel_id.say(&ctx, message).await?;
         return Ok(());
     }
     let user = &client.get_user(users.user.data[0].id, mode.clone()).await?;
@@ -231,7 +230,6 @@ pub async fn userimg(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 async fn gen_image(user: &Box<osu_v2::user::User>, usermode: String) {
     magick_wand_genesis();
     info!("{}", &user.avatar_url);
-    let asset_folder = "./assets/";
     let avatar_url: String;
     if user.avatar_url.chars().nth(0).unwrap() == '/' {
         avatar_url = format!("https://osu.ppy.sh{}", &user.avatar_url);

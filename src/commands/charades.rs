@@ -118,23 +118,23 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
     {
         match message.content.as_str() {
             "1" => {
-                &msg.channel_id.say(&ctx.http, "Anime").await.unwrap();
+                msg.channel_id.say(&ctx.http, "Anime").await.unwrap();
                 category = Categories::Anime;
             }
             "2" => {
-                &msg.channel_id.say(&ctx.http, "Game").await.unwrap();
+                msg.channel_id.say(&ctx.http, "Game").await.unwrap();
                 category = Categories::Game;
             }
             "3" => {
-                &msg.channel_id.say(&ctx.http, "Tv-Show").await.unwrap();
+                msg.channel_id.say(&ctx.http, "Tv-Show").await.unwrap();
                 category = Categories::TV;
             }
             "4" => {
-                &msg.channel_id.say(&ctx.http, "Movie").await.unwrap();
+                msg.channel_id.say(&ctx.http, "Movie").await.unwrap();
                 category = Categories::Movie;
             }
             _ => {
-                &msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
+                msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
                 return Ok(());
             }
         }
@@ -159,19 +159,19 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
     {
         match message.content.as_str() {
             "1" => {
-                &msg.channel_id.say(&ctx.http, "Easy").await.unwrap();
+                msg.channel_id.say(&ctx.http, "Easy").await.unwrap();
                 difficulty = Difficulties::Easy;
             }
             "2" => {
-                &msg.channel_id.say(&ctx.http, "Medium").await.unwrap();
+                msg.channel_id.say(&ctx.http, "Medium").await.unwrap();
                 difficulty = Difficulties::Medium;
             }
             "3" => {
-                &msg.channel_id.say(&ctx.http, "Hard").await.unwrap();
+                msg.channel_id.say(&ctx.http, "Hard").await.unwrap();
                 difficulty = Difficulties::Hard;
             }
             _ => {
-                &msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
+                msg.channel_id.say(&ctx.http, "Try again").await.unwrap();
                 return Ok(());
             }
         }
@@ -180,7 +180,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
     info!("{:?}", category);
     let mut puzzle = String::from("");
 
-    &msg.channel_id.say(&ctx, "What is the puzzle?").await?;
+    msg.channel_id.say(&ctx, "What is the puzzle?").await?;
 
     if let Some(message) = &msg
         .author
@@ -194,7 +194,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
 
     let mut hint = String::from("");
 
-    &msg.channel_id.say(&ctx, "Hint? (y/n)").await?;
+    msg.channel_id.say(&ctx, "Hint? (y/n)").await?;
 
     if let Some(message) = &msg
         .author
@@ -219,7 +219,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
 
     let mut solution = String::from("");
 
-    &msg.channel_id.say(&ctx, "What is the solution?").await?;
+    msg.channel_id.say(&ctx, "What is the solution?").await?;
 
     if let Some(message) = &msg
         .author
@@ -238,7 +238,7 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
         .push_line(format!("Solution is: {}", solution))
         .build();
 
-    &msg.channel_id.say(&ctx, response).await?;
+    msg.channel_id.say(&ctx, response).await?;
 
     let conn = establish_connection();
 

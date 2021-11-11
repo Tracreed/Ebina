@@ -1,7 +1,6 @@
 use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
-use serenity::utils::MessageBuilder;
 use serenity::utils::*;
 
 use mangadex_api::types::Language;

@@ -93,7 +93,7 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let vns = vnns.0;
 
     if vns.len() < 1 {
-        &msg.reply(&ctx.http, "No results :(");
+        msg.reply(&ctx.http, "No results :(").await?;
         return Ok(());
     }
 

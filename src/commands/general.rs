@@ -50,7 +50,7 @@ pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     let latency = match runner.latency {
         Some(latency) => latency,
         None => {
-            &msg.reply(ctx, "Couldn't get latency. Maybe wait a little longer")
+            msg.reply(ctx, "Couldn't get latency. Maybe wait a little longer")
                 .await?;
 
             return Ok(());
@@ -104,7 +104,7 @@ pub async fn weather(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
     };
     let w = openweather::get_current_weather(&location, &key, &settings).unwrap();
     println!("{:?}", w);
-    &msg.channel_id
+    msg.channel_id
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
                 e.title(format!("{} - {}", w.name, w.weather[0].description));
@@ -139,7 +139,7 @@ pub async fn mpv(ctx: &Context, msg: &Message) -> CommandResult {
         .unwrap();
     let title = get_mpv_property("media-title").unwrap();
 
-    &msg.channel_id
+    msg.channel_id
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
                 e.title(title);
