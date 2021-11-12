@@ -24,7 +24,7 @@ async fn reboot(mut payload: web::Payload) -> Result<HttpResponse> {
         hmac.update(&chunk.to_vec());
     }
 
-    
+    println!("Test");
 
 Ok(HttpResponse::Ok().body(""))
 }
@@ -36,7 +36,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
         .service(reboot)
     })
-    .bind("127.0.0.1")?
+    .bind("0.0.0.0:25566")?
     .run()
     .await
 }
