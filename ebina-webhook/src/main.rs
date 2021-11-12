@@ -15,7 +15,7 @@ extern crate dotenv;
 type HmacSha256 = Hmac<Sha256>;
 
 #[post("/rb")]
-async fn reboot(mut payload: web::Payload) -> Result<HttpResponse> {
+async fn reboot(mut payload: web::Payload, request: HttpRequest) -> Result<HttpResponse> {
     let secret = std::env::var("GITEA_SECRET").expect("GITEA_SECRET needs to be set");
     let mut hmac = HmacSha256::new_from_slice(secret.as_bytes())
         .expect("Something went wrong with creating the HMAC");
@@ -23,6 +23,12 @@ async fn reboot(mut payload: web::Payload) -> Result<HttpResponse> {
         let chunk = chunk?;
         hmac.update(&chunk.to_vec());
     }
+
+    //let result = hmac.finalize();
+
+    let gitea_hmac = request.headers().get("X-Gitea-Signature").unwrap().as_bytes();
+
+    hmac.verify(gitea_hmac).unwrap();
 
     println!("Test");
 

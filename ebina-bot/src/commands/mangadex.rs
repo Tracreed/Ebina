@@ -6,6 +6,7 @@ use serenity::utils::*;
 use mangadex_api::types::Language;
 use mangadex_api::types::RelationshipType;
 use mangadex_api::MangaDexClient;
+use mangadex_api::v5::schema::RelatedAttributes;
 use mangadex_api::CDN_URL;
 
 use tracing::info;
@@ -25,7 +26,7 @@ pub async fn manga(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
         .manga()
         .search()
         .title(title.join(" "))
-        .includes(vec![RelationshipType::Author])
+        .includes(vec![RelationshipType::Author, RelationshipType::Artist])
         .build()?
         .send()
         .await?;
@@ -88,7 +89,13 @@ pub async fn manga(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
                     "Author",
                     manga_authors
                         .iter()
-                        .map(|auth| auth.id.to_hyphenated().to_string())
+                        .map(|auth| {
+                            let attri = auth.attributes.as_ref().unwrap();
+                            match attri {
+                                RelatedAttributes::Author(a) => a.name.as_str(),
+                                _ => unreachable!()
+                            }
+                        })
                         .collect::<Vec<_>>()
                         .join(" "),
                     true,

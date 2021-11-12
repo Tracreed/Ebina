@@ -1611,8 +1611,8 @@ dependencies = [
 
 [[package]]
 name = "mangadex-api"
-version = "1.0.0-alpha.7"
-source = "git+https://gitlab.com/gondolyr/mangadex-api?branch=main#a40c1403699c6d0d2778428e16ad047d3a83b996"
+version = "1.0.0-alpha.8"
+source = "git+https://gitlab.com/gondolyr/mangadex-api?branch=main#0a5fe74ef56a7cd9801f1c61dc3a6d79009f28c2"
 dependencies = [
  "anyhow",
  "derive_builder",
