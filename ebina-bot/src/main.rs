@@ -31,6 +31,8 @@ use serenity::{
 use std::collections::HashMap;
 use std::fs;
 
+use tokio::signal::unix::{signal, SignalKind};
+
 use tracing::{error, info};
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
@@ -188,13 +190,21 @@ async fn main() {
     )
     .await;
 
-    let shard_manager = client.shard_manager.clone();
+    let shard_manager_ctrl = client.shard_manager.clone();
+    let shard_manager_term = client.shard_manager.clone();
 
     tokio::spawn(async move {
         tokio::signal::ctrl_c()
             .await
             .expect("Could not register ctrl+c handler");
-        shard_manager.lock().await.shutdown_all().await;
+        shard_manager_ctrl.lock().await.shutdown_all().await;
+    });
+
+    let mut termsig = signal(SignalKind::terminate()).unwrap();
+
+    tokio::spawn(async move {
+        termsig.recv().await;
+        shard_manager_term.lock().await.shutdown_all().await;
     });
 
     /* let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(600));

@@ -1,2 +1,9 @@
-/target
+**/target
+**/*.rs.bk
+**/.idea
+**/.vscode
+
+# Cargo build configuration
+.cargo
+
 .env
