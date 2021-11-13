@@ -39,7 +39,7 @@ async fn reboot(body: web::Bytes, request: HttpRequest) -> Result<HttpResponse> 
 			.output()
 			.expect("failed to git pull");
 		println!("building");
-		Command::new("/bin/cargo")
+		Command::new("/home/tracreed/.cargo/bin/cargo")
 			.arg("build")
 			.arg("--release")
 			.output()
