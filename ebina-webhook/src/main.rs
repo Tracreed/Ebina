@@ -34,12 +34,12 @@ async fn reboot(body: web::Bytes, request: HttpRequest) -> Result<HttpResponse> 
 
 	if gitea_hmac.eq(&hashed) {
 		println!("git pull");
-		Command::new("git")
+		Command::new("/bin/git")
 			.arg("pull")
 			.output()
 			.expect("failed to git pull");
 		println!("building");
-		Command::new("cargo")
+		Command::new("/bin/cargo")
 			.arg("build")
 			.arg("--release")
 			.output()
