@@ -69,7 +69,7 @@ async fn main() -> std::io::Result<()> {
 		App::new()
 		.service(reboot)
 	})
-	.bind("127.0.0.1:25566")?
+	.bind("0.0.0.0:25566")?
 	.run()
 	.await
 }
