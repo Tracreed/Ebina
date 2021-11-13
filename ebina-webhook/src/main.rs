@@ -47,6 +47,11 @@ async fn reboot(body: web::Bytes, request: HttpRequest) -> Result<HttpResponse> 
 			.arg("./bot")
 			.output()
 			.expect("failed to copy built bot");
+		Command::new("cp")
+			.arg("./target/release/ebina-webhook")
+			.arg("./webhook")
+			.output()
+			.expect("failed to copy webhook binary");
 		Command::new("systemctl")
 			.arg("restart")
 			.arg("ebina.service")
