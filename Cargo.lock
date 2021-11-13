@@ -389,7 +389,7 @@ dependencies = [
  "log",
  "pin-project 1.0.8",
  "tokio 1.13.0",
- "tokio-rustls",
+ "tokio-rustls 0.22.0",
  "tungstenite",
  "webpki-roots 0.20.0",
 ]
@@ -1347,7 +1347,7 @@ checksum = "ef9a6b5b2cd80630d9c6bda175408a86908d8a9c1eb5b2857206529d88d063a3"
 dependencies = [
  "rustls 0.16.0",
  "unicase",
- "webpki",
+ "webpki 0.21.4",
  "webpki-roots 0.18.0",
 ]
 
@@ -1404,8 +1404,8 @@ dependencies = [
  "log",
  "rustls 0.19.1",
  "tokio 1.13.0",
- "tokio-rustls",
- "webpki",
+ "tokio-rustls 0.22.0",
+ "webpki 0.21.4",
 ]
 
 [[package]]
@@ -1619,7 +1619,7 @@ dependencies = [
 [[package]]
 name = "mangadex-api"
 version = "1.0.0-alpha.8"
-source = "git+https://gitlab.com/gondolyr/mangadex-api?branch=main#0a5fe74ef56a7cd9801f1c61dc3a6d79009f28c2"
+source = "git+https://gitlab.com/gondolyr/mangadex-api#88f4667ac34562fddb9de08dfcda891eb1ac28d8"
 dependencies = [
  "anyhow",
  "derive_builder",
@@ -2433,7 +2433,7 @@ dependencies = [
  "time 0.2.27",
  "tokio 1.13.0",
  "tokio-native-tls",
- "tokio-rustls",
+ "tokio-rustls 0.22.0",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -2520,8 +2520,8 @@ dependencies = [
  "base64 0.10.1",
  "log",
  "ring",
- "sct",
- "webpki",
+ "sct 0.6.1",
+ "webpki 0.21.4",
 ]
 
 [[package]]
@@ -2533,8 +2533,20 @@ dependencies = [
  "base64 0.13.0",
  "log",
  "ring",
- "sct",
- "webpki",
+ "sct 0.6.1",
+ "webpki 0.21.4",
+]
+
+[[package]]
+name = "rustls"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b5ac6078ca424dc1d3ae2328526a76787fecc7f8011f520e3276730e711fc95"
+dependencies = [
+ "log",
+ "ring",
+ "sct 0.7.0",
+ "webpki 0.22.0",
 ]
 
 [[package]]
@@ -2564,6 +2576,16 @@ name = "sct"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b362b83898e0e69f38515b82ee15aa80636befe47c3b6d3d89a911e78fc228ce"
+dependencies = [
+ "ring",
+ "untrusted",
+]
+
+[[package]]
+name = "sct"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d53dcdb7c9f8158937a7981b48accfd39a43af418591a5d008c7b22b5e1b7ca4"
 dependencies = [
  "ring",
  "untrusted",
@@ -2647,9 +2669,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.69"
+version = "1.0.70"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e466864e431129c7e0d3476b92f20458e5879919a0596c6472738d9fa2d342f8"
+checksum = "e277c495ac6cd1a01a58d0a0c574568b4d1ddf14f59965c6a58b8d96400b54f3"
 dependencies = [
  "itoa",
  "ryu",
@@ -3109,7 +3131,18 @@ checksum = "bc6844de72e57df1980054b38be3a9f4702aba4858be64dd700181a8a6d0e1b6"
 dependencies = [
  "rustls 0.19.1",
  "tokio 1.13.0",
- "webpki",
+ "webpki 0.21.4",
+]
+
+[[package]]
+name = "tokio-rustls"
+version = "0.23.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4baa378e417d780beff82bf54ceb0d195193ea6a00c14e22359e7f39456b5689"
+dependencies = [
+ "rustls 0.20.0",
+ "tokio 1.13.0",
+ "webpki 0.22.0",
 ]
 
 [[package]]
@@ -3417,13 +3450,13 @@ checksum = "5fecdca9a5291cc2b8dcf7dc02453fee791a280f3743cb0905f8822ae463b3fe"
 
 [[package]]
 name = "vndb"
-version = "0.11.0"
-source = "git+https://github.com/Tracreed/vndb.rs#a31686ae56ae26528a62cd453d94eab037490612"
+version = "0.12.0"
+source = "git+https://github.com/Tracreed/vndb.rs#e97d084d52d1f190629980114776bf03ff921132"
 dependencies = [
  "serde",
  "serde_json",
  "tokio 1.13.0",
- "tokio-rustls",
+ "tokio-rustls 0.23.1",
 ]
 
 [[package]]
@@ -3535,12 +3568,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "webpki"
+version = "0.22.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f095d78192e208183081cc07bc5515ef55216397af48b873e5edcd72637fa1bd"
+dependencies = [
+ "ring",
+ "untrusted",
+]
+
+[[package]]
 name = "webpki-roots"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91cd5736df7f12a964a5067a12c62fa38e1bd8080aff1f80bc29be7c80d19ab4"
 dependencies = [
- "webpki",
+ "webpki 0.21.4",
 ]
 
 [[package]]
@@ -3549,7 +3592,7 @@ version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f20dea7535251981a9670857150d571846545088359b28e4951d350bdaf179f"
 dependencies = [
- "webpki",
+ "webpki 0.21.4",
 ]
 
 [[package]]
@@ -3558,7 +3601,7 @@ version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aabe153544e473b775453675851ecc86863d2a81d786d741f6b76778f2a48940"
 dependencies = [
- "webpki",
+ "webpki 0.21.4",
 ]
 
 [[package]]

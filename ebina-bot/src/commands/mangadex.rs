@@ -25,8 +25,8 @@ pub async fn manga(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
     let manga_res = client
         .manga()
         .search()
-        .title(title.join(" "))
         .includes(vec![RelationshipType::Author, RelationshipType::Artist])
+        .title(title.join(" "))
         .build()?
         .send()
         .await?;
