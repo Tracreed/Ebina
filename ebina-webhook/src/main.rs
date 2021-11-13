@@ -33,15 +33,18 @@ async fn reboot(body: web::Bytes, request: HttpRequest) -> Result<HttpResponse> 
 	let gitea_hmac = request.headers().get("X-Gitea-Signature").unwrap();
 
 	if gitea_hmac.eq(&hashed) {
+		println!("git pull");
 		Command::new("git")
 			.arg("pull")
 			.output()
 			.expect("failed to git pull");
+		println!("building");
 		Command::new("cargo")
 			.arg("build")
 			.arg("--release")
 			.output()
 			.expect("failed to cargo build");
+		println!("copying files");
 		Command::new("cp")
 			.arg("./target/release/ebina-bot")
 			.arg("./bot")
@@ -52,6 +55,7 @@ async fn reboot(body: web::Bytes, request: HttpRequest) -> Result<HttpResponse> 
 			.arg("./webhook")
 			.output()
 			.expect("failed to copy webhook binary");
+		println!("restarting bot");
 		Command::new("systemctl")
 			.arg("restart")
 			.arg("ebina.service")
