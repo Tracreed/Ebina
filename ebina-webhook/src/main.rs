@@ -45,6 +45,10 @@ async fn reboot(body: web::Bytes, request: HttpRequest) -> Result<HttpResponse> 
 			.output()
 			.expect("failed to cargo build");
 		println!("copying files");
+		Command::new("sudo")
+			.args(["systemctl", "stop", "ebina.service"])
+			.output()
+			.expect("failed to stop service");
 		Command::new("cp")
 			.arg("./target/release/ebina-bot")
 			.arg("./bot")
@@ -58,7 +62,7 @@ async fn reboot(body: web::Bytes, request: HttpRequest) -> Result<HttpResponse> 
 		println!("restarting bot");
 		Command::new("sudo")
 			.arg("systemctl")
-			.arg("restart")
+			.arg("start")
 			.arg("ebina.service")
 			.output()
 			.expect("failed to restart service");
