@@ -39,11 +39,12 @@ async fn reboot(body: web::Bytes, request: HttpRequest) -> Result<HttpResponse> 
 			.output()
 			.expect("failed to git pull");
 		println!("building");
-		Command::new("cargo")
+		let cargo = Command::new("cargo")
 			.arg("build")
 			.arg("--release")
 			.output()
 			.expect("failed to cargo build");
+		println!("{:?}", cargo);
 		println!("copying files");
 		Command::new("sudo")
 			.args(["systemctl", "stop", "ebina.service"])
