@@ -66,6 +66,12 @@ pub async fn manga(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
         .filter(|related| related.type_ == RelationshipType::Author)
         .collect::<Vec<_>>();
 
+    let manga_artists = manga
+        .relationships
+        .iter()
+        .filter(|related| related.type_ == RelationshipType::Artist)
+        .collect::<Vec<_>>();
+
     let _ = &msg
         .channel_id
         .send_message(&ctx.http, |m| {
@@ -86,7 +92,7 @@ pub async fn manga(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
                 });
 
                 e.field(
-                    "Author",
+                    "Authors",
                     manga_authors
                         .iter()
                         .map(|auth| {
@@ -100,6 +106,26 @@ pub async fn manga(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
                         .join(" "),
                     true,
                 );
+
+                /*e.field(
+                    "Artists",
+                    manga_authors
+                        .iter()
+                        .map(|auth| {
+                            let attri = auth.attributes.as_ref().unwrap();
+                            match attri {
+                                RelatedAttributes::Artist(a) => a.name.as_str(),
+                                _ => unreachable!()
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                    true,
+                );*/
+
+                if manga.attributes.publication_demographic.is_some() {
+                    e.field("Demographic", manga.attributes.publication_demographic.unwrap(), true);
+                }
 
                 /*if manga.artists().len() > 0 {
                     e.field("Artist", manga.artists().join(", "), true);
