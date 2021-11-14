@@ -56,7 +56,8 @@ async fn reboot(body: web::Bytes, request: HttpRequest) -> Result<HttpResponse> 
 			.output()
 			.expect("failed to copy webhook binary");
 		println!("restarting bot");
-		Command::new("systemctl")
+		Command::new("sudo")
+			.arg("systemctl")
 			.arg("restart")
 			.arg("ebina.service")
 			.output()
