@@ -103,25 +103,25 @@ pub async fn manga(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
                             }
                         })
                         .collect::<Vec<_>>()
-                        .join(" "),
+                        .join(", "),
                     true,
                 );
 
-                /*e.field(
+                e.field(
                     "Artists",
-                    manga_authors
+                    manga_artists
                         .iter()
                         .map(|auth| {
                             let attri = auth.attributes.as_ref().unwrap();
                             match attri {
-                                RelatedAttributes::Artist(a) => a.name.as_str(),
+                                RelatedAttributes::Author(a) => a.name.as_str(),
                                 _ => unreachable!()
                             }
                         })
                         .collect::<Vec<_>>()
-                        .join(" "),
+                        .join(", "),
                     true,
-                );*/
+                );
 
                 if manga.attributes.publication_demographic.is_some() {
                     e.field("Demographic", manga.attributes.publication_demographic.unwrap(), true);
@@ -130,9 +130,7 @@ pub async fn manga(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
                 /*if manga.artists().len() > 0 {
                     e.field("Artist", manga.artists().join(", "), true);
                 }
-                if manga.publication().demographic() != &mangadex_api::types::Demographic::None {
-                    e.field("Demographic", manga.publication().demographic(), true);
-                }
+                
                 if contents.len() > 0 {
                     e.field("Content", contents.join(", "), true);
                 }
