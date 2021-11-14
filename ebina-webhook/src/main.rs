@@ -39,7 +39,7 @@ async fn reboot(body: web::Bytes, request: HttpRequest) -> Result<HttpResponse> 
 			.output()
 			.expect("failed to git pull");
 		println!("building");
-		let cargo = Command::new("cargo")
+		let cargo = Command::new("/home/ebina/.cargo/bin/cargo")
 			.arg("build")
 			.arg("--release")
 			.output()
