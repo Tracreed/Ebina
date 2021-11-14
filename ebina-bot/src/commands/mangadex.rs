@@ -86,7 +86,7 @@ pub async fn manga(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
                 });
 
                 e.field(
-                    "Authors",
+                    "Author",
                     manga_authors
                         .iter()
                         .map(|auth| {
