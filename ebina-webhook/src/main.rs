@@ -1,7 +1,6 @@
-use actix_web::http::{header, Method, StatusCode};
 use actix_web::web::Buf;
 use actix_web::{
-	error, post, guard, middleware, web, App, Error, HttpRequest, HttpResponse,
+	post, web, App, HttpRequest, HttpResponse,
 	HttpServer, Result,
 };
 
