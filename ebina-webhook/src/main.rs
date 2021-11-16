@@ -67,6 +67,8 @@ async fn reboot(body: web::Bytes, request: HttpRequest) -> Result<HttpResponse> 
 			.arg("ebina.service")
 			.output()
 			.expect("failed to restart service");
+	} else {
+		return Ok(HttpResponse::Unauthorized().body("415"))
 	}
 
 	Ok(HttpResponse::Ok().body(""))
