@@ -2,4 +2,5 @@
 members = [
     "ebina-bot",
     "ebina-webhook",
+    "ebina-anilist",
 ]
