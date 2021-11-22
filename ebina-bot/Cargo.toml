@@ -34,6 +34,7 @@ openweather = { git = "https://github.com/Tracreed/openweather"}
 ron = "0.7.0"
 magick_rust = "0.15.0"
 uuid = "0.8.2"
+wolfram_alpha = { git = "https://github.com/ParadoxSpiral/wolfram-alpha-rs" }
 
 [features]
 numeric = ["bigdecimal"]

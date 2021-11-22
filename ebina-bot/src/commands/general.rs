@@ -15,6 +15,7 @@ use std::io::BufReader;
 use std::io::Write;
 use std::os::unix::net::UnixStream;
 use tracing::{error, info};
+use wolfram_alpha::query::query;
 
 extern crate openweather;
 
@@ -59,8 +60,6 @@ pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 		}
 	};
 
-
-
 	let time_to_respond = Utc::now().signed_duration_since(msg.timestamp);
 
 	let latency_message = MessageBuilder::new()
@@ -73,8 +72,6 @@ pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
 			e.field("Pong!", latency_message, true)
 		})
 	}).await?;
-
-	msg.channel_id.send_message(&ctx.http, |m| {m.content(";;help")}).await?;
 
 	Ok(())
 }
@@ -148,51 +145,16 @@ pub async fn weather(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 }
 
 #[command]
-pub async fn mpv(ctx: &Context, msg: &Message) -> CommandResult {
-	let pos = get_mpv_property("time-pos")
-		.unwrap()
-		.replace("\"", "")
-		.parse::<f64>()
-		.unwrap();
-	let title = get_mpv_property("media-title").unwrap();
-
-	msg.channel_id
-		.send_message(&ctx.http, |m| {
-			m.embed(|e| {
-				e.title(title);
-				let dur = Duration::seconds(pos as i64);
-				e.field(
-					"Position",
-					format_duration(dur.to_std().unwrap()).to_string(),
-					true,
-				);
-				e
-			});
-			m
-		})
-		.await
-		.unwrap();
-
-	info!("{}", pos);
+pub async fn wolf(ctx: &Context, msg: &Message) -> CommandResult {
+	let app_id = env::var("WOLFRAM_ALPHA").expect("WEATHER_KEY needs to be set");
+	let response = query(None,&app_id,  &msg.content.replace(".wolf", ""), None).unwrap();
+	msg.channel_id.send_message(&ctx.http, |m| {
+		m.add_embed(|e| {
+			e.title("WolframAlpha");
+			e.description(response.pods.unwrap()[1].subpods[0].plaintext.as_ref().unwrap());
+			e
+		});
+		m
+	}).await?;
 	Ok(())
-}
-
-fn get_mpv_property(property: &str) -> Result<String, &'static str> {
-	let mut socket = match UnixStream::connect("/home/trac/.config/mpv/socket") {
-		Ok(sock) => sock,
-		Err(e) => {
-			error!("Couldn't connect: {:?}", e);
-			return Err("Couldn't connect to socket");
-		}
-	};
-	let string_buf = format!(
-		"{{ \"command\": [\"get_property_string\", \"{}\"] }}\n",
-		property
-	);
-	socket.write_all(string_buf.as_bytes()).unwrap();
-	let mut response = String::new();
-	let mut reader = BufReader::new(socket);
-	reader.read_line(&mut response).unwrap();
-	let v: Value = serde_json::from_str(&response).unwrap();
-	Ok(v["data"].to_string())
 }
