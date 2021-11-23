@@ -145,13 +145,34 @@ pub async fn weather(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 }
 
 #[command]
-pub async fn wolf(ctx: &Context, msg: &Message) -> CommandResult {
+pub async fn wolf(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 	let app_id = env::var("WOLFRAM_ALPHA").expect("WEATHER_KEY needs to be set");
-	let response = query(None,&app_id,  &msg.content.replace(".wolf", ""), None).unwrap();
+	let response = query(None,&app_id,  args.rest(), None).unwrap();
+	println!("{:?}", response);
+
+	if response.pods.is_none() {
+		msg.channel_id.send_message(&ctx.http, |m| {
+			m.add_embed(|e| {
+				e.title("WolframAlpha");
+				if response.parsetiming.eq(&0.0) {
+					e.field("Reason", "Ratelimited!", false);
+				}
+				e.description("Failed!");
+				e.color(serenity::utils::Color::from_rgb(221, 17, 0));
+				e
+			});
+			m
+		}).await?;
+		return Ok(());
+	};
+
+	let pods = response.pods.unwrap();
 	msg.channel_id.send_message(&ctx.http, |m| {
 		m.add_embed(|e| {
 			e.title("WolframAlpha");
-			e.description(response.pods.unwrap()[1].subpods[0].plaintext.as_ref().unwrap());
+			e.field("Interpretation", pods[0].subpods[0].plaintext.as_ref().unwrap(), false);
+			e.field("Result", pods[1].subpods[0].plaintext.as_ref().unwrap(), false);
+			e.color(serenity::utils::Color::from_rgb(221, 17, 0));
 			e
 		});
 		m
