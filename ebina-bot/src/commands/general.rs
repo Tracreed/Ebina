@@ -1,20 +1,20 @@
 use std::env;
 
 use crate::ShardManagerContainer;
-use chrono::Duration;
+
 use chrono::Utc;
-use humantime::format_duration;
-use serde_json::Value;
+
+
 use serenity::client::bridge::gateway::ShardId;
 use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 use std::io::prelude::*;
-use std::io::BufReader;
-use std::io::Write;
-use std::os::unix::net::UnixStream;
-use tracing::{error, info};
+
+
+
+
 use wolfram_alpha::query::query;
 
 extern crate openweather;
