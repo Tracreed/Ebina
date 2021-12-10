@@ -34,6 +34,7 @@ pub async fn kick(ctx: &Context, msg: &Message) -> CommandResult {
             .await
             .unwrap();
     }
+	msg.channel_id.say(&ctx, "Kicked").await?;
     Ok(())
 }
 
