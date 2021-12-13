@@ -1,6 +1,7 @@
 use super::schema::charades;
 use super::schema::*;
 use bigdecimal::BigDecimal;
+use diesel_derive_enum::DbEnum;
 
 #[derive(Insertable)]
 #[table_name = "charades"]
@@ -53,4 +54,33 @@ pub struct Role {
 pub struct NewRole<'a> {
     pub server_id: &'a i64,
     pub data: &'a String,
+}
+
+#[derive(Queryable, Debug)]
+pub struct ServerSettings {
+	pub id: i32,
+	pub server_id: i64,
+	pub prefix: String,
+}
+
+#[derive(Insertable)]
+#[table_name = "discord_settings"]
+pub struct NewServerSettings<'a> {
+	pub server_id: &'a i64,
+	pub prefix: &'a String,
+}
+
+#[derive(Debug, PartialEq, DbEnum, Clone)]
+pub enum Categories {
+    Anime, // All variants must be fieldless
+    Manga,
+    Game,
+    TV,
+    Movie,
+}
+#[derive(Debug, PartialEq, DbEnum, Clone)]
+pub enum Difficulties {
+    Easy, // All variants must be fieldless
+    Medium,
+    Hard,
 }

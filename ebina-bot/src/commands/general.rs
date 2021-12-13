@@ -10,10 +10,11 @@ use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
-use std::io::prelude::*;
 
-
-
+use crate::models::*;
+use crate::schema::*;
+use crate::establish_connection;
+use crate::diesel::prelude::*;
 
 use wolfram_alpha::query::query;
 
@@ -145,6 +146,7 @@ pub async fn weather(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 }
 
 #[command]
+#[description = "Ask WolframAlpha questions about anything"]
 pub async fn wolf(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 	let app_id = env::var("WOLFRAM_ALPHA").expect("WEATHER_KEY needs to be set");
 	let response = query(None,&app_id,  args.rest(), None).unwrap();
@@ -178,4 +180,42 @@ pub async fn wolf(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 		m
 	}).await?;
 	Ok(())
+}
+
+#[command]
+#[required_permissions("MANAGE_GUILD")]
+pub async fn prefix(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+	let connection = establish_connection();
+
+	let prefix = args.rest();
+
+	create_server_settings(&connection, &(msg.guild_id.unwrap().0 as i64), prefix);
+
+	msg.channel_id.send_message(&ctx.http, |m| {
+		m.add_embed(|e| {
+			e.title("Set prefix to");
+			e.description(prefix);
+			e
+		});
+		m
+	}).await?;
+
+	Ok(())
+}
+
+pub fn create_server_settings<'a>(conn: &PgConnection, server: &'a i64, prefix: &str) -> ServerSettings {
+	let new_server_setting = NewServerSettings {
+		server_id: server,
+		prefix: &prefix.to_string(),
+	};
+
+	use crate::schema::discord_settings::server_id;
+
+	diesel::insert_into(discord_settings::table)
+		.values(&new_server_setting)
+		.on_conflict(server_id)
+		.do_update()
+		.set(discord_settings::prefix.eq(prefix))
+		.get_result(conn)
+		.expect("Error saving new guild setting")
 }

@@ -1,21 +1,5 @@
-use diesel_derive_enum::DbEnum;
-#[derive(Debug, PartialEq, DbEnum, Clone)]
-pub enum Categories {
-    Anime, // All variants must be fieldless
-    Manga,
-    Game,
-    TV,
-    Movie,
-}
-#[derive(Debug, PartialEq, DbEnum, Clone)]
-pub enum Difficulties {
-    Easy, // All variants must be fieldless
-    Medium,
-    Hard,
-}
-
 table! {
-    use super::{DifficultiesMapping, CategoriesMapping};
+    use crate::models::{DifficultiesMapping, CategoriesMapping};
     use diesel::sql_types::*;
     charades (id) {
         id -> Int4,
@@ -26,6 +10,14 @@ table! {
         difficulty -> DifficultiesMapping,
         userid -> Numeric,
         public -> Bool,
+    }
+}
+
+table! {
+    discord_settings (id) {
+        id -> Int4,
+        server_id -> Int8,
+        prefix -> Varchar,
     }
 }
 
@@ -47,4 +39,9 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(charades, feeds, roles,);
+allow_tables_to_appear_in_same_query!(
+    charades,
+    discord_settings,
+    feeds,
+    roles,
+);

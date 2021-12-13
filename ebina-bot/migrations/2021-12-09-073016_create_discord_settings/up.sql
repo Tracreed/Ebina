@@ -1,0 +1,5 @@
+CREATE TABLE discord_settings (
+	id SERIAL PRIMARY KEY,
+	server_id BIGINT NOT NULL UNIQUE,
+	prefix VARCHAR(255) NOT NULL
+);

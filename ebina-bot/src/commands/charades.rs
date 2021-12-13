@@ -6,7 +6,7 @@ use serenity::utils::MessageBuilder;
 
 use crate::establish_connection;
 
-use crate::schema::{Categories, Difficulties};
+use crate::models::{Categories, Difficulties};
 
 use std::time::Duration;
 use tracing::info;

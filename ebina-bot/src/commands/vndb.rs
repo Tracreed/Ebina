@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use regex::Regex;
 
-use vndb::protocol::message::{self};
+use vndb::protocol::message;
 
 use isolang::Language;
 

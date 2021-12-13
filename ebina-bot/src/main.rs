@@ -31,6 +31,8 @@ use serenity::{
 use std::collections::HashMap;
 use std::fs;
 
+use crate::models::*;
+
 use tokio::signal::unix::{signal, SignalKind};
 
 use tracing::{error, info};
@@ -42,6 +44,12 @@ pub struct ShardManagerContainer;
 
 impl TypeMapKey for ShardManagerContainer {
     type Value = Arc<Mutex<ShardManager>>;
+}
+
+pub struct ConnectionContainer;
+
+impl TypeMapKey for ConnectionContainer {
+    type Value = Mutex<PgConnection>;
 }
 
 pub struct OsuClientContainer;
@@ -85,7 +93,7 @@ impl EventHandler for Handler {
 }
 
 #[group]
-#[commands(ping, quit, vn, invite, weather, wolf)]
+#[commands(ping, quit, vn, invite, weather, wolf, prefix)]
 struct General;
 
 #[group]
@@ -153,6 +161,28 @@ async fn main() {
     let framework = StandardFramework::new()
         .configure(|c| {
             c.owners(owners)
+			.dynamic_prefix(|ctx, msg| Box::pin(async move {
+				use crate::schema::discord_settings::dsl::*;
+
+				let guild = msg.guild_id.unwrap().0;
+
+				let data = ctx.data.read().await;
+
+				let conn = &*data.get::<ConnectionContainer>().unwrap().lock().await;
+				let result = discord_settings.filter(server_id.eq(guild as i64))
+					.limit(1)
+					.load::<ServerSettings>(conn);
+				match result {
+					Ok(v) => {
+						if v.is_empty() {
+							None
+						} else {
+							Some(v[0].prefix.clone())
+						}
+					},
+					Err(_) => None,
+				}
+			}))
                 .prefixes(vec![prefix.as_str(), "ebina "])
                 .on_mention(Some(bot_id))
         })
@@ -174,6 +204,12 @@ async fn main() {
         data.insert::<ShardManagerContainer>(client.shard_manager.clone());
         let client_id = env::var("OSU_ID").expect("OSU_ID needs to be set");
         let client_secret = env::var("OSU_SECRET").expect("OSU_SECRET needs to be set");
+
+		let connection = Mutex::new(
+			establish_connection()
+		);
+
+		data.insert::<ConnectionContainer>(connection);
 
         let osuclient = Mutex::new(
             osu_v2::client::Client::new(client_id, client_secret)
