@@ -14,8 +14,6 @@ use tracing::info;
 
 use regex::Regex;
 
-use html2md::parse_html;
-
 const MANGADEX_COLOR: serenity::utils::Colour = Colour::from_rgb(246, 131, 40);
 
 #[command]
@@ -101,7 +99,7 @@ pub async fn manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
                 ));
 
 				if let Some(desc) = manga_description {
-					e.description(parse_html(desc.1));
+					e.description(fix_description(desc.1));
 				}
                 e.set_author(mangadex_author);
 
@@ -172,18 +170,19 @@ pub async fn manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     Ok(())
 }
 
-fn fix_description(mut description: String) -> String {
+fn fix_description<S: Into<String>>(description: S) -> String {
     let bold = Regex::new(r"\[(|/)b\]").unwrap();
+	let mut desc = description.into();
     let spoilers = Regex::new(r"\[spoiler\].*\[/spoiler\]").unwrap();
     let language = Regex::new(r"(\[b\]\[u\]|\[u\]\[b\]).*(\[/u\]\[/b\]|\[/b\]\[/u\])(\n| |\r\n)\[spoiler\].*(\[/spoiler\]|)").unwrap();
     let horizontal = Regex::new(r"\[hr\](\n|)").unwrap();
-    description = language.replace_all(&description, "").to_string();
-    description = bold.replace_all(&description, "**").to_string();
-    description = spoilers.replace_all(&description, "").to_string();
-    description = horizontal.replace_all(&description, "").to_string();
-    description = description.replace("&quot;", "\"");
-    if description.len() > 1000 {
-        description = format!("{}...", &description[..1000]);
+    desc = language.replace_all(&desc, "").to_string();
+    desc = bold.replace_all(&desc, "**").to_string();
+    desc = spoilers.replace_all(&desc, "").to_string();
+    desc = horizontal.replace_all(&desc, "").to_string();
+    desc = desc.replace("&quot;", "\"");
+    if desc.len() > 1000 {
+        desc = format!("{}...", &desc[..1000]);
     }
-    description
+    desc
 }
