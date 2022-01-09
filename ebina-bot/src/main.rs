@@ -92,12 +92,7 @@ impl EventHandler for Handler {
     async fn resume(&self, _: Context, _: ResumedEvent) {
         info!("Resumed");
     }
-
-	async fn message(&self, ctx: Context, msg: Message) {
-		msg.
-	}
 }
-
 #[group]
 #[commands(ping, quit, vn, invite, weather, wolf, prefix)]
 struct General;
