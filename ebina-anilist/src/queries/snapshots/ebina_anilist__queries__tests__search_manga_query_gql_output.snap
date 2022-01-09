@@ -1,0 +1,68 @@
+---
+source: ebina-anilist/src/queries/mod.rs
+expression: operation.query
+
+---
+query Query($_0: Int, $_1: MediaType, $_2: String, $_3: Boolean) {
+  Page(page: $_0) {
+    pageInfo {
+      total
+      perPage
+      currentPage
+      lastPage
+      hasNextPage
+    }
+    media(type: $_1, search: $_2) {
+      id
+      type
+      title {
+        romaji
+        english
+        native
+        userPreferred
+      }
+      episodes
+      volumes
+      genres
+      popularity
+      status
+      averageScore
+      tags {
+        id
+        name
+        rank
+      }
+      coverImage {
+        extraLarge
+        large
+        medium
+        color
+      }
+      format
+      season
+      meanScore
+      isAdult
+      duration
+      description(asHtml: $_3)
+      chapters
+      rankings {
+        rank
+        type
+      }
+      seasonYear
+      siteUrl
+      source
+      startDate {
+        day
+        month
+        year
+      }
+      endDate {
+        day
+        month
+        year
+      }
+    }
+  }
+}
+

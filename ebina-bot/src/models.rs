@@ -58,16 +58,16 @@ pub struct NewRole<'a> {
 
 #[derive(Queryable, Debug)]
 pub struct ServerSettings {
-	pub id: i32,
-	pub server_id: i64,
-	pub prefix: String,
+    pub id: i32,
+    pub server_id: i64,
+    pub prefix: String,
 }
 
 #[derive(Insertable)]
 #[table_name = "discord_settings"]
 pub struct NewServerSettings<'a> {
-	pub server_id: &'a i64,
-	pub prefix: &'a String,
+    pub server_id: &'a i64,
+    pub prefix: &'a String,
 }
 
 #[derive(Debug, PartialEq, DbEnum, Clone)]

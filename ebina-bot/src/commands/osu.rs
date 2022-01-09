@@ -36,7 +36,9 @@ pub async fn user(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
         Ok(v) => v,
         Err(_) => { &msg.author.name }.to_string(),
     };
-    let mode = args.single::<String>().unwrap_or_else(|_| "".to_string());
+    let mode = args
+        .single::<String>()
+        .unwrap_or_else(|_| "osu".to_string());
     let users = client.search_user(username.clone()).await?;
     if users.user.data.is_empty() {
         let message = MessageBuilder::new()
@@ -203,7 +205,9 @@ pub async fn userimg(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
         Ok(v) => v,
         Err(_) => { &msg.author.name }.to_string(),
     };
-    let mode = args.single::<String>().unwrap_or_else(|_| "".to_string());
+    let mode = args
+        .single::<String>()
+        .unwrap_or_else(|_| "osu".to_string());
     let users = client.search_user(username.clone()).await?;
     if users.user.data.is_empty() {
         let message = MessageBuilder::new()

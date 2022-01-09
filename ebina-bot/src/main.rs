@@ -38,7 +38,9 @@ use tokio::signal::unix::{signal, SignalKind};
 use tracing::{error, info};
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
-use commands::{charades::*, general::*, mangadex::*, moderation::*, osu::*, owner::*, vndb::*};
+use commands::{
+    anilist::*, charades::*, general::*, mangadex::*, moderation::*, osu::*, owner::*, vndb::*,
+};
 
 pub struct ShardManagerContainer;
 
@@ -90,6 +92,10 @@ impl EventHandler for Handler {
     async fn resume(&self, _: Context, _: ResumedEvent) {
         info!("Resumed");
     }
+
+	async fn message(&self, ctx: Context, msg: Message) {
+		msg.
+	}
 }
 
 #[group]
@@ -108,7 +114,7 @@ struct Charades;
 struct Osu;
 
 #[group]
-#[commands(ban, kick, userinfo, guildinfo, avatar)]
+#[commands(ban, kick, userinfo, guildinfo, avatar, clear)]
 #[description = "Commands related to moderation"]
 struct Moderation;
 
@@ -124,6 +130,13 @@ struct Feed; */
 #[prefix("md")]
 #[description = "Commands related to MangaDex"]
 struct Mangadex;
+
+#[group]
+#[commands(anilist_search, anilist_manga, anilist_anime, anilist_schedule)]
+#[default_command(anilist_search)]
+#[prefix("al")]
+#[description = "Commands related to Anilist and Anichart"]
+struct AniList;
 
 #[tokio::main]
 async fn main() {
@@ -161,28 +174,31 @@ async fn main() {
     let framework = StandardFramework::new()
         .configure(|c| {
             c.owners(owners)
-			.dynamic_prefix(|ctx, msg| Box::pin(async move {
-				use crate::schema::discord_settings::dsl::*;
+                .dynamic_prefix(|ctx, msg| {
+                    Box::pin(async move {
+                        use crate::schema::discord_settings::dsl::*;
 
-				let guild = msg.guild_id.unwrap().0;
+                        let guild = msg.guild_id.unwrap().0;
 
-				let data = ctx.data.read().await;
+                        let data = ctx.data.read().await;
 
-				let conn = &*data.get::<ConnectionContainer>().unwrap().lock().await;
-				let result = discord_settings.filter(server_id.eq(guild as i64))
-					.limit(1)
-					.load::<ServerSettings>(conn);
-				match result {
-					Ok(v) => {
-						if v.is_empty() {
-							None
-						} else {
-							Some(v[0].prefix.clone())
-						}
-					},
-					Err(_) => None,
-				}
-			}))
+                        let conn = &*data.get::<ConnectionContainer>().unwrap().lock().await;
+                        let result = discord_settings
+                            .filter(server_id.eq(guild as i64))
+                            .limit(1)
+                            .load::<ServerSettings>(conn);
+                        match result {
+                            Ok(v) => {
+                                if v.is_empty() {
+                                    None
+                                } else {
+                                    Some(v[0].prefix.clone())
+                                }
+                            }
+                            Err(_) => None,
+                        }
+                    })
+                })
                 .prefixes(vec![prefix.as_str(), "ebina "])
                 .on_mention(Some(bot_id))
         })
@@ -191,7 +207,8 @@ async fn main() {
         .group(&CHARADES_GROUP)
         .group(&OSU_GROUP)
         .group(&MODERATION_GROUP)
-        .group(&MANGADEX_GROUP);
+        .group(&MANGADEX_GROUP)
+        .group(&ANILIST_GROUP);
 
     let mut client = Client::builder(&token)
         .framework(framework)
@@ -205,11 +222,9 @@ async fn main() {
         let client_id = env::var("OSU_ID").expect("OSU_ID needs to be set");
         let client_secret = env::var("OSU_SECRET").expect("OSU_SECRET needs to be set");
 
-		let connection = Mutex::new(
-			establish_connection()
-		);
+        let connection = Mutex::new(establish_connection());
 
-		data.insert::<ConnectionContainer>(connection);
+        data.insert::<ConnectionContainer>(connection);
 
         let osuclient = Mutex::new(
             osu_v2::client::Client::new(client_id, client_secret)

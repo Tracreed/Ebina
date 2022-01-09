@@ -26,14 +26,9 @@ pub async fn ban(ctx: &Context, msg: &Message) -> CommandResult {
 pub async fn kick(ctx: &Context, msg: &Message) -> CommandResult {
     let users = &msg.mentions;
     for user in users {
-        let _ = msg
-            .guild(&ctx)
-            .await
-            .unwrap()
-            .kick(&ctx, user.id)
-            .await?;
+        let _ = msg.guild(&ctx).await.unwrap().kick(&ctx, user.id).await?;
     }
-	msg.channel_id.say(&ctx, "Kicked").await?;
+    msg.channel_id.say(&ctx, "Kicked").await?;
     Ok(())
 }
 
@@ -126,5 +121,49 @@ pub async fn guildinfo(ctx: &Context, msg: &Message) -> CommandResult {
             m
         })
         .await?;
+    Ok(())
+}
+
+/// Removes the amount of messages specified, has to be between 2 and 100
+#[command]
+#[required_permissions("MANAGE_MESSAGES")]
+#[aliases("clr")]
+pub async fn clear(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    let amount_parse = args.single::<u64>();
+    let amount = match amount_parse {
+        Ok(v) => v,
+        Err(err) => {
+            msg.channel_id
+                .send_message(&ctx.http, |m| {
+                    m.embed(|e| {
+                        e.description(err.to_string());
+                        e
+                    });
+                    m
+                })
+                .await?;
+            return Ok(());
+        }
+    };
+
+    if amount > 100 {
+        msg.channel_id
+            .send_message(&ctx.http, |m| {
+                m.embed(|e| {
+                    e.description("Can't remove more than 100 messages");
+                    e
+                });
+                m
+            })
+            .await?;
+    }
+
+    let messages = msg
+        .channel_id
+        .messages(&ctx.http, |r| r.limit(amount + 1))
+        .await?;
+
+    msg.channel_id.delete_messages(&ctx.http, messages).await?;
+
     Ok(())
 }

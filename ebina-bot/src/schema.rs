@@ -39,9 +39,4 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(
-    charades,
-    discord_settings,
-    feeds,
-    roles,
-);
+allow_tables_to_appear_in_same_query!(charades, discord_settings, feeds, roles,);

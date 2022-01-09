@@ -5,5 +5,5 @@
 
 # Cargo build configuration
 .cargo
-
+.graphqlrc.yaml
 .env

@@ -1,0 +1,63 @@
+query Manga($title: String) {
+	Page(page: 1) {
+		pageInfo {
+			total
+			perPage
+			currentPage
+			lastPage
+			hasNextPage
+		}
+		media(search: $title, type: MANGA) {
+			id
+			format
+			type
+			title {
+				romaji
+				english
+				native
+				userPreferred
+			}
+			chapters
+			volumes
+			genres
+			popularity
+			tags {
+				id
+				name
+				rank
+			}
+		}
+	}
+}
+
+query Anime($title: String) {
+	Page(page: 1) {
+		pageInfo {
+			total
+			perPage
+			currentPage
+			lastPage
+			hasNextPage
+		}
+		media(search: $title, type: ANIME) {
+			id
+			format
+			type
+			title {
+				romaji
+				english
+				native
+				userPreferred
+			}
+			episodes
+			season
+			genres
+			popularity
+			tags {
+				id
+				name
+				rank
+			}
+		}
+	}
+}
