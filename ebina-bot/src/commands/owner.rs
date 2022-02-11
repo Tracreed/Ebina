@@ -21,3 +21,11 @@ async fn quit(ctx: &Context, msg: &Message) -> CommandResult {
 
     Ok(())
 }
+
+#[command]
+#[owners_only]
+async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
+    msg.guild_id.unwrap().leave(ctx).await;
+
+	Ok(())
+}
