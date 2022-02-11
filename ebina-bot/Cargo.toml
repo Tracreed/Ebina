@@ -28,7 +28,7 @@ chrono = "0.4.19"
 humantime = "2.1.0"
 reqwest = "0.11.1"
 roxmltree = "0.14.0"
-url = "2.2.1"
+url = "2.2.2"
 mangadex-api = { git = "https://gitlab.com/gondolyr/mangadex-api", features = ["multi-thread"] }
 openweather = { git = "https://github.com/Tracreed/openweather"}
 ron = "0.7.0"
@@ -37,6 +37,7 @@ uuid = "0.8.2"
 wolfram_alpha = { git = "https://github.com/ParadoxSpiral/wolfram-alpha-rs" }
 ebina-anilist = { path = "../ebina-anilist" }
 html2md = "0.2.13"
+helium-api = { git = "https://github.com/Tracreed/helium-api-rs" }
 
 [features]
 numeric = ["bigdecimal"]

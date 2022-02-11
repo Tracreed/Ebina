@@ -383,10 +383,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "arrayvec"
+version = "0.7.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
+
+[[package]]
 name = "ascii"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eab1c04a571841102f5345a8fc0f6bb3d31c315dec879b5c6e42e40ce7ffa34e"
+
+[[package]]
+name = "async-compression"
+version = "0.3.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2bf394cfbbe876f0ac67b13b6ca819f9c9f2fb9ec67223cceb1555fbab1c31a"
+dependencies = [
+ "flate2",
+ "futures-core",
+ "memchr",
+ "pin-project-lite 0.2.7",
+ "tokio 1.14.0",
+]
 
 [[package]]
 name = "async-trait"
@@ -962,7 +981,7 @@ checksum = "9a086fdece2d6206e52894d978a09b09efca1e61ac59d69a934eab74d8d9ee40"
 dependencies = [
  "cynic-proc-macros",
  "json-decode",
- "reqwest 0.11.7",
+ "reqwest 0.11.9",
  "serde",
  "serde_json",
  "thiserror",
@@ -1182,7 +1201,7 @@ dependencies = [
  "cynic",
  "graphql_client",
  "insta",
- "reqwest 0.11.7",
+ "reqwest 0.11.9",
  "serde",
  "tokio 1.14.0",
 ]
@@ -1197,6 +1216,7 @@ dependencies = [
  "diesel-derive-enum",
  "dotenv",
  "ebina-anilist",
+ "helium-api",
  "html2md",
  "humantime",
  "isocountry",
@@ -1208,7 +1228,7 @@ dependencies = [
  "osu_v2",
  "read_color",
  "regex",
- "reqwest 0.11.7",
+ "reqwest 0.11.9",
  "ron",
  "roxmltree",
  "serde",
@@ -1657,9 +1677,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.7"
+version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7fd819562fcebdac5afc5c113c3ec36f902840b70fd4fc458799c8ce4607ae55"
+checksum = "d9f1f717ddc7b2ba36df7e871fd88db79326551d3d6f1fc406fbfd28b582ff8e"
 dependencies = [
  "bytes 1.1.0",
  "fnv",
@@ -1687,6 +1707,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6d621efb26863f0e9924c6ac577e8275e5e6b77455db64ffa6c65c904e9e132c"
 dependencies = [
  "unicode-segmentation",
+]
+
+[[package]]
+name = "helium-api"
+version = "3.2.2-dev"
+source = "git+https://github.com/Tracreed/helium-api-rs#961c4abd00f8fd198107e8959d8f27700a982d1d"
+dependencies = [
+ "async-trait",
+ "base64 0.13.0",
+ "chrono",
+ "futures 0.3.17",
+ "reqwest 0.11.9",
+ "rust_decimal",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]
@@ -1868,7 +1904,7 @@ dependencies = [
  "futures-channel",
  "futures-core",
  "futures-util",
- "h2 0.3.7",
+ "h2 0.3.11",
  "http 0.2.5",
  "http-body 0.4.4",
  "httparse",
@@ -2196,7 +2232,7 @@ dependencies = [
  "anyhow",
  "derive_builder",
  "futures 0.3.17",
- "reqwest 0.11.7",
+ "reqwest 0.11.9",
  "serde",
  "serde_qs",
  "thiserror",
@@ -2441,7 +2477,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bafe4179722c2894288ee77a9f044f02811c86af699344c498b0840c698a2465"
 dependencies = [
- "arrayvec",
+ "arrayvec 0.4.12",
  "itoa",
 ]
 
@@ -2548,7 +2584,7 @@ dependencies = [
  "actix-rt 2.4.0",
  "async-trait",
  "dotenv",
- "reqwest 0.11.7",
+ "reqwest 0.11.9",
  "serde",
  "serde_json",
  "thiserror",
@@ -3162,10 +3198,11 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.11.7"
+version = "0.11.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07bea77bc708afa10e59905c3d4af7c8fd43c9214251673095ff8b14345fcbc5"
+checksum = "87f242f1488a539a79bac6dbe7c8609ae43b7914b7736210f239a37cccb32525"
 dependencies = [
+ "async-compression",
  "base64 0.13.0",
  "bytes 1.1.0",
  "cookie 0.15.1",
@@ -3173,6 +3210,7 @@ dependencies = [
  "encoding_rs",
  "futures-core",
  "futures-util",
+ "h2 0.3.11",
  "http 0.2.5",
  "http-body 0.4.4",
  "hyper 0.14.15",
@@ -3201,7 +3239,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "webpki-roots 0.21.1",
+ "webpki-roots 0.22.2",
  "winreg 0.7.0",
 ]
 
@@ -3248,6 +3286,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "921904a62e410e37e215c40381b7117f830d9d89ba60ab5236170541dd25646b"
 dependencies = [
  "xmlparser",
+]
+
+[[package]]
+name = "rust_decimal"
+version = "1.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4214023b1223d02a4aad9f0bb9828317634a56530870a2eaf7200a99c0c10f68"
+dependencies = [
+ "arrayvec 0.7.2",
+ "num-traits",
+ "serde",
 ]
 
 [[package]]
@@ -3539,7 +3588,7 @@ dependencies = [
  "flate2",
  "futures 0.3.17",
  "percent-encoding 2.1.0",
- "reqwest 0.11.7",
+ "reqwest 0.11.9",
  "serde",
  "serde_json",
  "static_assertions",
@@ -4717,11 +4766,11 @@ dependencies = [
 
 [[package]]
 name = "webpki-roots"
-version = "0.21.1"
+version = "0.22.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aabe153544e473b775453675851ecc86863d2a81d786d741f6b76778f2a48940"
+checksum = "552ceb903e957524388c4d3475725ff2c8b7960922063af6ce53c9a43da07449"
 dependencies = [
- "webpki 0.21.4",
+ "webpki 0.22.0",
 ]
 
 [[package]]

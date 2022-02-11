@@ -8,3 +8,4 @@ pub mod vndb;
 //pub mod feed;
 pub mod anilist;
 pub mod macros;
+pub mod helium;

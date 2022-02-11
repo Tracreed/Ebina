@@ -38,8 +38,10 @@ use tokio::signal::unix::{signal, SignalKind};
 use tracing::{error, info};
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
+use url::{Url, ParseError};
+
 use commands::{
-    anilist::*, charades::*, general::*, mangadex::*, moderation::*, osu::*, owner::*, vndb::*,
+    anilist::*, charades::*, general::*, mangadex::*, moderation::*, osu::*, owner::*, vndb::*, helium::*,
 };
 
 pub struct ShardManagerContainer;
@@ -92,7 +94,40 @@ impl EventHandler for Handler {
     async fn resume(&self, _: Context, _: ResumedEvent) {
         info!("Resumed");
     }
+
+	async fn message(&self, ctx: Context, msg: Message) {
+
+		let raw_msg = msg.content.clone();
+
+		let words = raw_msg.split(' ');
+
+		for word in words {
+			let url_contains = Url::parse(&word);
+			match url_contains {
+				Ok(url) => handle_url(&ctx, &msg, url).await,
+				Err(_) => continue,
+			}
+		}
+	}
 }
+
+/// Handle messages that are just URLs to respond with 
+async fn handle_url(ctx: &Context, msg: &Message, url: Url) {
+	let domain = url.domain().unwrap();
+	match domain {
+		"mangadex.org" => {
+			manage_md_url(ctx, msg, url).await;
+		}
+		"anilist.co" => {
+
+		}
+		"explorer.helium.org" => {
+			manage_helium_url(ctx, msg, url).await;
+		}
+		_ => {},
+	}
+}
+
 #[group]
 #[commands(ping, quit, vn, invite, weather, wolf, prefix)]
 struct General;
@@ -102,7 +137,7 @@ struct General;
 struct Charades;
 
 #[group]
-#[commands(user, userimg)]
+#[commands(user)]
 #[prefix("osu")]
 #[default_command(user)]
 #[description = "Commands related to the Osu! Rhythm game."]
@@ -112,6 +147,11 @@ struct Osu;
 #[commands(ban, kick, userinfo, guildinfo, avatar, clear)]
 #[description = "Commands related to moderation"]
 struct Moderation;
+
+#[group]
+#[commands(hotspot)]
+#[description = "Commands related to Helium"]
+struct Helium;
 
 /* #[group]
 #[prefix = "feed"]
@@ -203,7 +243,8 @@ async fn main() {
         .group(&OSU_GROUP)
         .group(&MODERATION_GROUP)
         .group(&MANGADEX_GROUP)
-        .group(&ANILIST_GROUP);
+        .group(&ANILIST_GROUP)
+		.group(&HELIUM_GROUP);
 
     let mut client = Client::builder(&token)
         .framework(framework)
