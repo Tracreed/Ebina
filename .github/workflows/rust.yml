@@ -21,13 +21,13 @@ jobs:
       run: cargo build --verbose --release
     - name: Run tests
       run: cargo test --verbose --release
+    - name: zip artifacts
+      run: zip ebina.zip target/release/ebina-bot target/release/ebina-webhook
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
         name: ebina
-        path: |
-          target/release/ebina-bot
-          target/release/ebina-webhook
+        path: ebina.zip
   release:
     needs: build
     name: Release
@@ -46,4 +46,4 @@ jobs:
           prerelease: true
           title: "Development Build"
           files: |
-            Ebina
+            ebina.zip
