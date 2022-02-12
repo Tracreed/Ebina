@@ -17,6 +17,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --verbose --release
     - name: Run tests
       run: cargo test --verbose
+    - name: Upload binary artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: binaries
+        path: |
+          target/release/ebina-bot
+          target/release/ebina-webhook
