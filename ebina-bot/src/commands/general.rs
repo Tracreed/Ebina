@@ -154,7 +154,7 @@ pub async fn weather(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 #[command]
 #[description = "Ask WolframAlpha questions about anything"]
 pub async fn wolf(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    let app_id = env::var("WOLFRAM_ALPHA").expect("WEATHER_KEY needs to be set");
+    let app_id = env::var("WOLFRAM_ALPHA").expect("WOLFRAM_ALPHA needs to be set");
     let response = query(None, &app_id, args.rest(), None).unwrap();
     println!("{:?}", response);
 
