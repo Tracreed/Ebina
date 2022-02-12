@@ -24,7 +24,7 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: ebina-bot
+        name: ebina
         path: |
           target/release/ebina-bot
           target/release/ebina-webhook
@@ -38,7 +38,7 @@ jobs:
       - name: Download binary files
         uses: actions/download-artifact@v2
         with:
-          name: ebina-bot
+          name: ebina
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -46,4 +46,4 @@ jobs:
           prerelease: true
           title: "Development Build"
           files: |
-            ebina-bot
+            ebina
