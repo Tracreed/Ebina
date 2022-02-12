@@ -13,6 +13,10 @@ extern crate osu_v2;
 extern crate reqwest;
 extern crate roxmltree;
 
+#[macro_use]
+extern crate diesel_migrations;
+
+
 use diesel::{pg::PgConnection, prelude::*};
 use serenity::{
     async_trait,
@@ -38,11 +42,13 @@ use tokio::signal::unix::{signal, SignalKind};
 use tracing::{error, info};
 use tracing_subscriber::{EnvFilter, FmtSubscriber};
 
-use url::{Url, ParseError};
+use url::Url;
 
 use commands::{
     anilist::*, charades::*, general::*, mangadex::*, moderation::*, osu::*, owner::*, vndb::*, helium::*,
 };
+
+embed_migrations!();
 
 pub struct ShardManagerContainer;
 
@@ -102,7 +108,7 @@ impl EventHandler for Handler {
 		let words = raw_msg.split(' ');
 
 		for word in words {
-			let url_contains = Url::parse(&word);
+			let url_contains = Url::parse(word);
 			match url_contains {
 				Ok(url) => handle_url(&ctx, &msg, url).await,
 				Err(_) => continue,
@@ -111,7 +117,7 @@ impl EventHandler for Handler {
 	}
 }
 
-/// Handle messages that are just URLs to respond with 
+/// Handle messages that are just URLs to respond with
 async fn handle_url(ctx: &Context, msg: &Message, url: Url) {
 	let domain = url.domain().unwrap();
 	match domain {
@@ -193,6 +199,10 @@ async fn main() {
     let prefix = env::var("PREFIX").expect("Expected a prefix in the environment");
 
     let http = Http::new_with_token(&token);
+
+	let connection = establish_connection();
+
+	embedded_migrations::run(&connection).unwrap();
 
     // We will fetch your bot's owners and id
     let (owners, bot_id) = match http.get_current_application_info().await {
