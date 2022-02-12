@@ -8,7 +8,6 @@ use std::{collections::HashSet, env, sync::Arc};
 #[macro_use]
 extern crate diesel;
 extern crate bigdecimal;
-extern crate dotenv;
 extern crate osu_v2;
 extern crate reqwest;
 extern crate roxmltree;
@@ -181,10 +180,6 @@ struct AniList;
 
 #[tokio::main]
 async fn main() {
-    // This will load the environment variables located at `./.env`, relative to
-    // the CWD. See `./.env.example` for an example on how to structure this.
-    dotenv::dotenv().expect("Failed to load .env file");
-
     // Initialize the logger to use environment variables.
     //
     // In this case, a good default is setting the environment variable

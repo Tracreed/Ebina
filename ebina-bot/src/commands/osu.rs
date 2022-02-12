@@ -4,13 +4,6 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 use serenity::utils::*;
-use std::env::temp_dir;
-use std::fs::File;
-use std::io::Write;
-
-extern crate dotenv;
-
-use tracing::info;
 
 use osu_v2::user::UserMethods;
 use read_color::*;
