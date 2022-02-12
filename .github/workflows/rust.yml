@@ -46,4 +46,4 @@ jobs:
           prerelease: true
           title: "Development Build"
           files: |
-            ebina
+            Ebina
