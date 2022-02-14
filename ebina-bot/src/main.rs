@@ -277,8 +277,7 @@ async fn main() {
     }
 
     parse_tags(
-        &client,
-        std::path::Path::new("./assets/vndb-tags-2021-02-08.json"),
+        &client
     )
     .await;
 
@@ -320,10 +319,10 @@ pub fn establish_connection() -> PgConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-async fn parse_tags(client: &Client, path: &std::path::Path) {
+async fn parse_tags(client: &Client) {
     let mut data = client.data.write().await;
 
-    let file_data = fs::read_to_string(path).expect("unable to read json file");
+    let file_data = include_str!("./assets/vndb-tags-2021-02-08.json");
 
     let tags: Vec<commands::vndb::VnTagJ> =
         serde_json::from_str(&file_data).expect("unable to parse json");
