@@ -322,7 +322,7 @@ pub fn establish_connection() -> PgConnection {
 async fn parse_tags(client: &Client) {
     let mut data = client.data.write().await;
 
-    let file_data = include_str!("./ebina-bot/assets/vndb-tags-2021-02-08.json");
+    let file_data = include_str!("../assets/vndb-tags-2021-02-08.json");
 
     let tags: Vec<commands::vndb::VnTagJ> =
         serde_json::from_str(&file_data).expect("unable to parse json");
