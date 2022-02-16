@@ -3,47 +3,44 @@ name: Rust
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  test:
 
     runs-on: ubuntu-latest
 
     steps:
     - uses: Swatinem/rust-cache@v1
     - uses: actions/checkout@v2
-    - name: Build
-      run: cargo build --verbose --release
     - name: Run tests
       run: cargo test --verbose --release
-    - name: zip artifacts
-      run: zip ebina.zip target/release/ebina-bot target/release/ebina-webhook
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: ebina
-        path: ebina.zip
-  release:
-    needs: build
-    name: Release
 
+  docker:
+    name: Publish - Docker Hub
     runs-on: ubuntu-latest
-
+    needs: [test]
+    env:
+      REPO: ${{ secrets.DOCKER_REPO }}
     steps:
-      - name: Download binary files
-        uses: actions/download-artifact@v2
-        with:
-          name: ebina
-      - uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
-          prerelease: false
-          title: "Release Build"
-          files: |
-            ebina.zip
+      - uses: actions/checkout@v1
+      - name: Login to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USER }}
+              -p ${{ secrets.DOCKER_PASS }}
+      - name: Build Docker image
+        run: docker build -t $REPO:latest -t $REPO:${GITHUB_SHA::8} .
+      - name: Publish Docker image
+        run docker push $REPO
+
+  redeploy:
+    name: Redeploy webhook call
+    runs-on: ubuntu-latest
+    needs: [docker]
+    steps:
+      - name: Deploy docker container webhook
+        uses: joelwmale/webhook-action@master
+        env:
+          WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          data: "{ 'data': 'data' }"
