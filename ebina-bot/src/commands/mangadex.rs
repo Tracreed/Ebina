@@ -5,7 +5,7 @@ use serenity::utils::*;
 use serenity::builder::CreateEmbedAuthor;
 
 use mangadex_api::types::{Language, TagGroup};
-use mangadex_api::types::{RelationshipType};
+use mangadex_api::types::{RelationshipType, ReferenceExpansionResource};
 use mangadex_api::v5::schema::RelatedAttributes;
 use mangadex_api::MangaDexClient;
 use mangadex_api::CDN_URL;
@@ -31,7 +31,7 @@ pub async fn manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let manga_res = client
         .manga()
         .search()
-        .includes(vec![RelationshipType::Author, RelationshipType::Artist])
+        .includes(vec![ReferenceExpansionResource::Author, ReferenceExpansionResource::Artist])
         .title(title)
 		.limit(1u32)
         .build()?
@@ -191,7 +191,7 @@ pub async fn manage_md_url(ctx: &Context, msg: &Message, url: Url) {
 
 	let client = MangaDexClient::default();
 
-	let manga_res = client.manga().get().manga_id(&id).includes(vec![RelationshipType::Author, RelationshipType::Artist]).build().unwrap().send().await.unwrap();
+	let manga_res = client.manga().get().manga_id(&id).includes(vec![ReferenceExpansionResource::Author, ReferenceExpansionResource::Artist]).build().unwrap().send().await.unwrap();
 
 	let manga = manga_res.data.clone();
 
