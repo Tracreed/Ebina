@@ -15,7 +15,11 @@ use crate::establish_connection;
 use crate::models::*;
 use crate::schema::*;
 
+use tracing::{error, info};
+
 use wolfram_alpha::query::query;
+
+use rustnao::{HandlerBuilder, Sauce};
 
 extern crate openweather;
 
@@ -198,6 +202,85 @@ pub async fn wolf(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         })
         .await?;
     Ok(())
+}
+
+#[command]
+pub async fn sauce(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+	let api_key = env::var("SAUCENAO").expect("SAUCENAO needs to be set");
+	let url_arg = args.single::<String>();
+	let url;
+	if !msg.attachments.is_empty() {
+		url = msg.attachments[0].url.clone();
+	} else {
+		url = match url_arg {
+			Ok(u) => u,
+			Err(_) => {
+				msg.channel_id
+					.send_message(&ctx.http, |m| {
+						m.add_embed(|e| {
+							e.title("Error!");
+							e.description("Command requires an attached image or url.");
+							e
+						});
+						m
+					})
+					.await?;
+					return Ok(())
+			}
+		}
+	}
+
+	let handler = HandlerBuilder::new().api_key(&api_key).num_results(1).build();
+
+	//handler.set_min_similarity(45);
+
+	let result: Vec<Sauce> = handler.get_sauce(&url, None, None).unwrap();
+
+	if result.is_empty() {
+		msg.channel_id
+			.send_message(&ctx.http, |m| {
+				m.add_embed(|e| {
+					e.title("Error!");
+					e.description("No matches found!");
+					e
+				});
+				m
+			})
+			.await?;
+		return Ok(());
+	}
+
+	let sauce = &result[0];
+
+	msg.channel_id
+        .send_message(&ctx.http, |m| {
+            m.add_embed(|e| {
+                e.title("Match Found");
+                e.thumbnail(sauce.thumbnail.clone());
+				match &sauce.additional_fields {
+					Some(v) => {
+						let source = v.get("source");
+						if let Some(v) = source {
+							let s = v.as_str().unwrap();
+							if !s.is_empty() {
+								e.field("Source", s, false);
+							}
+						}
+					},
+					None => {},
+				};
+				e.field("Site", sauce.site.clone(), false);
+				e.field("Similarity", format!("{}%", sauce.similarity), false);
+				if !sauce.ext_urls.is_empty() {
+					e.field("External URLs", sauce.ext_urls[0].clone(), false);
+				}
+                e
+            });
+            m
+        })
+        .await.unwrap();
+
+	Ok(())
 }
 
 #[command]

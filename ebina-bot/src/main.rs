@@ -134,7 +134,7 @@ async fn handle_url(ctx: &Context, msg: &Message, url: Url) {
 }
 
 #[group]
-#[commands(ping, quit, vn, invite, weather, wolf, prefix)]
+#[commands(ping, quit, vn, invite, weather, wolf, sauce, prefix)]
 struct General;
 
 #[group]

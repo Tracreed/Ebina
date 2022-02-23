@@ -1169,6 +1169,7 @@ dependencies = [
  "reqwest 0.11.9",
  "ron",
  "roxmltree",
+ "rustnao",
  "serde",
  "serde_json",
  "serenity",
@@ -3223,6 +3224,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5eebeaeb360c87bfb72e84abdb3447159c0eaececf1bef2aecd65a8be949d1c9"
 dependencies = [
  "base64 0.13.0",
+]
+
+[[package]]
+name = "rustnao"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6c38e3c75425c5038ada4d70fd7ce9a683df7da12d80cb1bfbeb1deb0ea1498"
+dependencies = [
+ "failure",
+ "reqwest 0.9.24",
+ "serde",
+ "serde_json",
+ "url 1.7.2",
 ]
 
 [[package]]

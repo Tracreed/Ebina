@@ -37,6 +37,7 @@ ebina-anilist = { path = "../ebina-anilist" }
 html2md = "0.2.13"
 helium-api = { git = "https://github.com/Tracreed/helium-api-rs" }
 diesel_migrations = "1.4.0"
+rustnao = "0.2.1"
 
 [features]
 numeric = ["bigdecimal"]
