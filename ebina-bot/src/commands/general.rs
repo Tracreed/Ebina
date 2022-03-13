@@ -15,7 +15,7 @@ use crate::establish_connection;
 use crate::models::*;
 use crate::schema::*;
 
-use tracing::{error, info};
+//use tracing::{error, info};
 
 use wolfram_alpha::query::query;
 
@@ -230,9 +230,9 @@ pub async fn sauce(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
 		}
 	}
 
-	let handler = HandlerBuilder::new().api_key(&api_key).num_results(1).build();
+	let handler = HandlerBuilder::default().api_key(&api_key).num_results(1).build();
 
-	//handler.set_min_similarity(45);
+	handler.set_min_similarity(45);
 
 	let result: Vec<Sauce> = handler.get_sauce(&url, None, None).unwrap();
 
@@ -241,7 +241,7 @@ pub async fn sauce(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
 			.send_message(&ctx.http, |m| {
 				m.add_embed(|e| {
 					e.title("Error!");
-					e.description("No matches found!");
+					e.description("No match found!");
 					e
 				});
 				m
@@ -270,6 +270,13 @@ pub async fn sauce(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
 					None => {},
 				};
 				e.field("Site", sauce.site.clone(), false);
+				if !sauce.source.is_empty() {
+					e.field("Source", sauce.source.clone(), false);
+				}
+
+				if !sauce.creator.is_empty() {
+					e.field("Creator", sauce.creator.join("\n"), false);
+				}
 				e.field("Similarity", format!("{}%", sauce.similarity), false);
 				if !sauce.ext_urls.is_empty() {
 					e.field("External URLs", sauce.ext_urls[0].clone(), false);
