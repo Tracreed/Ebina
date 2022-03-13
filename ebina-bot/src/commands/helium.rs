@@ -59,9 +59,9 @@ pub async fn hotspot(ctx: &Context, msg: &Message, args: Args) -> CommandResult 
 			},
 		};
 	}
-	
+
 	println!("{:#?}", htsp);
-	
+
 	msg.channel_id.send_message(&ctx.http, |m| {
 		m.embed(|e| {
 			e.field("Name", htsp.name.unwrap(), true);

@@ -3,7 +3,7 @@ mod commands;
 pub mod models;
 pub mod schema;
 
-use std::{collections::HashSet, env, sync::Arc};
+use std::{collections::HashSet, env, sync::{Arc, atomic::AtomicBool}};
 
 #[macro_use]
 extern crate diesel;
@@ -32,7 +32,6 @@ use serenity::{
 };
 
 use std::collections::HashMap;
-use std::fs;
 
 use crate::models::*;
 
@@ -86,7 +85,10 @@ async fn my_help(
     Ok(())
 }
 
-struct Handler;
+
+struct Handler {
+	is_web_running: AtomicBool,
+}
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -113,6 +115,20 @@ impl EventHandler for Handler {
 				Err(_) => continue,
 			}
 		}
+	}
+
+	async fn cache_ready(&self, ctx: Context, _guilds: Vec<GuildId>) {
+
+		info!("Cache ready!");
+
+		if !self.is_web_running.load(std::sync::atomic::Ordering::Relaxed) {
+			tokio::spawn(async move {
+				let app = ebina_web::WebApp::new(ctx.clone());
+				app.start("127.0.0.1:8081".to_string()).await.unwrap();
+				info!("Started the web app");
+			});
+		}
+		self.is_web_running.swap(true, std::sync::atomic::Ordering::Relaxed);
 	}
 }
 
@@ -253,7 +269,9 @@ async fn main() {
 
     let mut client = Client::builder(&token)
         .framework(framework)
-        .event_handler(Handler)
+        .event_handler(Handler {
+			is_web_running: AtomicBool::new(false),
+		})
         .await
         .expect("Err creating client");
 
@@ -325,7 +343,7 @@ async fn parse_tags(client: &Client) {
     let file_data = include_str!("../assets/vndb-tags-2021-02-08.json");
 
     let tags: Vec<commands::vndb::VnTagJ> =
-        serde_json::from_str(&file_data).expect("unable to parse json");
+        serde_json::from_str(file_data).expect("unable to parse json");
     let tags_data = data.get_mut::<TagsContainer>().unwrap();
 
     for tag in tags {
