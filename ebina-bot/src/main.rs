@@ -124,7 +124,7 @@ impl EventHandler for Handler {
 		if !self.is_web_running.load(std::sync::atomic::Ordering::Relaxed) {
 			tokio::spawn(async move {
 				let app = ebina_web::WebApp::new(ctx.clone());
-				app.start("127.0.0.1:8081".to_string()).await.unwrap();
+				app.start("0.0.0.0:8081".to_string()).await.unwrap();
 				info!("Started the web app");
 			});
 		}

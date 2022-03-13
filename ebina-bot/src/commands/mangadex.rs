@@ -151,6 +151,8 @@ pub async fn manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
                     );
                 }
 
+				e.field("Publication Status", manga.attributes.status, true);
+
                 /*if manga.artists().len() > 0 {
                     e.field("Artist", manga.artists().join(", "), true);
                 }
@@ -344,6 +346,7 @@ pub async fn manage_md_url(ctx: &Context, msg: &Message, url: Url) {
                         true,
                     );
 				}
+				e.field("Publication Status", manga.attributes.status, true);
 
                 /*if manga.artists().len() > 0 {
                     e.field("Artist", manga.artists().join(", "), true);
