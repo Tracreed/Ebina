@@ -270,12 +270,12 @@ pub async fn sauce(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
 					None => {},
 				};
 				e.field("Site", sauce.site.clone(), false);
-				if !sauce.source.is_empty() {
-					e.field("Source", sauce.source.clone(), false);
+				if sauce.source.is_some() {
+					e.field("Source", sauce.source.as_ref().unwrap().clone(), false);
 				}
 
-				if !sauce.creator.is_empty() {
-					e.field("Creator", sauce.creator.join("\n"), false);
+				if sauce.creator.is_some() && !sauce.creator.as_ref().unwrap().is_empty() {
+					e.field("Creator", sauce.creator.as_ref().unwrap().join("\n"), false);
 				}
 				e.field("Similarity", format!("{}%", sauce.similarity), false);
 				if !sauce.ext_urls.is_empty() {
