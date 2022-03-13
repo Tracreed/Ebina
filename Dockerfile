@@ -4,7 +4,7 @@ RUN apt-get install libpq-dev
 RUN mkdir -p /build
 COPY ebina-bot /build/ebina-bot
 COPY ebina-anilist /build/ebina-anilist
-COPY ebina-web / build/ebina-web
+COPY ebina-web /build/ebina-web
 WORKDIR /build/ebina-bot
 RUN cargo build --release
 
