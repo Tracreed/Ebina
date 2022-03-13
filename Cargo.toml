@@ -3,6 +3,6 @@ members = [
     "ebina-bot",
     "ebina-webhook",
     "ebina-anilist",
-	"ebina-web",
-	"ebina-web-dashboard"
+    "ebina-web",
+    "ebina-web-dashboard"
 ]
