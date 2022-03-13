@@ -10,6 +10,6 @@ RUN cargo build --release
 
 FROM rust:slim-buster
 RUN apt-get update
-RUN apt-get install -y libpq-dev
+RUN apt-get install -y libpq-dev libcurl4-openssl-dev
 COPY --from=builder /build/ebina-bot/target/release/ebina-bot /usr/local/bin/ebina-bot
 CMD ebina-bot
