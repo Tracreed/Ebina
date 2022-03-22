@@ -18,7 +18,7 @@ use uuid::Uuid;
 
 use url::Url;
 
-use crate::utils::options::{send_options, Options};
+use crate::utils::options::Options;
 
 const MANGADEX_COLOR: serenity::utils::Colour = Colour::from_rgb(246, 131, 40);
 
@@ -59,7 +59,7 @@ pub async fn manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 	}
 
 	let index = Options::new(ctx, msg)
-		.title("Enter the number corresponding the Manga you want info about!".to_string())
+		.title("Enter the number corresponding the Manga you want info about!")
 		.options(options)
 		.colour(MANGADEX_COLOR)
 		.author(mangadex_author)
