@@ -27,14 +27,16 @@ impl<'a> Options<'a> {
 	}
 
 	/// Sets the title of the options
-	pub fn title(mut self, title: String) -> Self {
-		self.title = Some(title);
+	pub fn title<S>(mut self, title: S) -> Self
+	where S: Into<String> {
+		self.title = Some(title.into());
 		self
 	}
 
 	/// Sets single option
-	pub fn option(mut self, option: String) -> Self {
-		self.options.push(option);
+	pub fn option<S>(mut self, option: S) -> Self
+	where S: Into<String> {
+		self.options.push(option.into());
 		self
 	}
 
