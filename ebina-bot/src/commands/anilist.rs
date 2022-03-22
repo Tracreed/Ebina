@@ -12,7 +12,7 @@ use html2md::parse_html;
 use ebina_anilist::{search, search_specific, get_schedule, queries::queries::MediaType};
 
 use crate::anilist_embed;
-use crate::utils::options::send_options;
+use crate::utils::options::Options;
 
 const ANI_LIST_COLOR: serenity::utils::Colour = Colour::from_rgb(43, 45, 66);
 
@@ -94,7 +94,15 @@ pub async fn anilist_media(ctx: &Context, msg: &Message, args: Args, media_type:
 		None => "Media".to_string(),
 	};
 
-	let index = send_options(ctx, msg, format!("Enter the number corresponding the {} you want info about!", options_title.to_lowercase()), options, Some(ANI_LIST_COLOR), Some(ani_list_author.clone())).await;
+	//let index = send_options(ctx, msg, format!("Enter the number corresponding the {} you want info about!", options_title.to_lowercase()), options, Some(ANI_LIST_COLOR), Some(ani_list_author.clone())).await;
+	let index = Options::new(ctx, msg)
+		.title(format!("Enter the number corresponding the {} you want info about!", options_title.to_lowercase()))
+		.options(options)
+		.colour(ANI_LIST_COLOR)
+		.author(ani_list_author.clone())
+		.edit()
+		.send()
+		.await;
 	if index.is_none() {
 		return Ok(())
 	}
