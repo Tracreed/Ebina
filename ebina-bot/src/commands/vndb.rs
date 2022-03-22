@@ -1,5 +1,5 @@
 use crate::TagsContainer;
-use crate::utils::options::{Options, send_options};
+use crate::utils::options::Options;
 use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
@@ -104,8 +104,9 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
 	let index = Options::new(ctx, msg)
-		.title("Enter the number corresponding the Visual Novel you want info about!".to_string())
+		.title("Enter the number corresponding the Visual Novel you want info about!")
 		.options(options)
+		.edit()
 		.send()
 		.await;
 
