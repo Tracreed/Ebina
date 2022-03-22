@@ -9,7 +9,7 @@ edition = "2021"
 [dependencies]
 tokio = { version = "1.0", features = ["macros", "signal", "rt-multi-thread"] }
 tracing = "0.1"
-tracing-subscriber = "0.2"
+tracing-subscriber = "0.3.9"
 tracing-futures = "0.2" # needed so intrument works with async functions.
 diesel = { version = "1.4.4", features = ["postgres", "numeric"] }
 bigdecimal = { version = "0.1.2", optional = true}
@@ -18,7 +18,7 @@ serde_json = "1.0"
 serde = "1.0.123"
 diesel-derive-enum = { version = "1", features = ["postgres"] }
 regex = "1"
-isolang = "1.0.0"
+isolang = "2.1.0"
 num-format = "0.4.0"
 isocountry = "0.3.2"
 osu_v2 = { git = "https://git.fuyu.moe/Tracreed/osu_v2"}

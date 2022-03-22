@@ -1,9 +1,9 @@
 use crate::TagsContainer;
+use crate::utils::options::{Options, send_options};
 use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use std::error::Error;
-use std::time::Duration;
 use tracing::{error, info};
 
 use serde::{Deserialize, Serialize};
@@ -97,58 +97,24 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         return Ok(());
     }
 
-    let mut vnsearch = Vec::<String>::new();
+	let mut options: Vec<String> = Vec::new();
 
-    for (i, vnn) in vns.iter().enumerate() {
-        vnsearch.push(format!("{}. {}", i + 1, vnn.title.as_ref().unwrap()));
-        if vns.len() - 1 == i {
-            vnsearch.push("Cancel".to_string());
-        }
+	for vn in &vns {
+        options.push(vn.title.as_ref().unwrap().to_string());
     }
 
-    let embmsg = msg
-        .channel_id
-        .send_message(&ctx.http, |m| {
-            m.embed(|e| {
-                e.title("Enter the number corresponding the Visual Novel you want info about!");
-                e.description(vnsearch.join("\n"))
-            });
+	let index = Options::new(ctx, msg)
+		.title("Enter the number corresponding the Visual Novel you want info about!".to_string())
+		.options(options)
+		.send()
+		.await;
 
-            m
-        })
-        .await?;
-    //embmsg.delete(&ctx.http).await?;
+	if index.is_none() {
+		return Ok(())
+	}
 
-    let mut vn: &message::response::results::Vn;
-
-    let mut cancel = false;
-
-    vn = &vns[0];
-
-    if let Some(message) = &msg
-        .author
-        .await_reply(&ctx)
-        .channel_id(msg.channel_id)
-        .timeout(Duration::from_secs(60))
-        .await
-    {
-        let num: i32;
-        let lenvn = vns.len() as i32;
-        num = message.content.parse::<i32>().unwrap_or(-1);
-        if num <= lenvn && num > 0 {
-            vn = &vns[((num - 1) as usize)];
-            message.delete(&ctx.http).await?;
-        } else if message.content.to_lowercase() == *"cancel" {
-            cancel = true;
-            message.delete(&ctx.http).await?;
-        }
-    }
-    if cancel {
-        embmsg.delete(&ctx.http).await?;
-        return Ok(());
-    }
-
-    embmsg.delete(&ctx.http).await?;
+    let vn = &vns[index.unwrap().0];
+	let mess = &mut ctx.http.get_message(index.unwrap().2.0, index.unwrap().1.0).await?;
 
     let releases = match get_release(vn.id, client).await {
         Ok(v) => v,
@@ -191,13 +157,11 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let mut languages = Vec::<String>::new();
     if !vn.languages.is_empty() {
         for lang in &vn.languages {
-            let is;
             if lang.len() > 3 {
                 languages.push(lang_code_conv(lang.to_string()));
                 break;
-            } else {
-                is = Language::from_639_1(lang).unwrap();
             }
+			let is = Language::from_639_1(lang).unwrap();
             languages.push(is.to_name().to_string());
         }
     }
@@ -234,56 +198,53 @@ pub async fn vn(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     }
     let re = Regex::new(r"\[url=(?P<url>.*?)\](?P<name>.*?)\[/url\]").unwrap();
     let phonere = Regex::new(r"(^\[|\]$)").unwrap();
-    info!("{:?}", vn);
-    msg.channel_id
-        .send_message(&ctx.http, |m| {
-            m.embed(|e| {
-                e.title(vn.title.as_ref().unwrap_or(&"".to_string()));
-                if vn.description.is_some() {
-                    e.description(phonere.replace_all(
-                        &re.replace_all(vn.description.as_ref().unwrap(), "[$name]($url)"),
-                        "\\$1",
-                    ));
-                }
-                e.thumbnail(vn.image.as_ref().unwrap_or(&"".to_string()));
-                e.url(format!("https://vndb.org/v{}", vn.id));
-                if vn.aliases.is_some() {
-                    e.field(
-                        "Aliases",
-                        vn.aliases.as_ref().unwrap().replace("\n", ", "),
-                        true,
-                    );
-                }
-                if !length.is_empty() {
-                    e.field("Length", length, true);
-                }
-                e.field("Popularity", vn.popularity, true);
-                if vn.rating.is_some() {
-                    e.field(
-                        "Rating",
-                        format!("{} ({})", vn.rating.unwrap(), vn.votecount.unwrap()),
-                        true,
-                    );
-                }
-                if !devstring.is_empty() {
-                    e.field("Developers", devstring.join(" & "), true);
-                }
-                if !languages.is_empty() {
-                    e.field("Languages", languages.join(", "), true);
-                }
-                if vn.original.is_some() {
-                    e.field("Original title", vn.original.as_ref().unwrap(), true);
-                }
-                if !tags.is_empty() {
-                    e.field("Tags", tags_string.join(", "), true);
-                }
-                e
-            });
-            info!("{:?}", m);
-            m
-        })
-        .await
-        .unwrap();
+    mess.edit(&ctx.http, |m| {
+		m.embed(|e| {
+			e.title(vn.title.as_ref().unwrap_or(&"".to_string()));
+			if vn.description.is_some() {
+				e.description(phonere.replace_all(
+					&re.replace_all(vn.description.as_ref().unwrap(), "[$name]($url)"),
+					"\\$1",
+				));
+			}
+			e.thumbnail(vn.image.as_ref().unwrap_or(&"".to_string()));
+			e.url(format!("https://vndb.org/v{}", vn.id));
+			if vn.aliases.is_some() {
+				e.field(
+					"Aliases",
+					vn.aliases.as_ref().unwrap().replace('\n', ", "),
+					true,
+				);
+			}
+			if !length.is_empty() {
+				e.field("Length", length, true);
+			}
+			e.field("Popularity", vn.popularity, true);
+			if vn.rating.is_some() {
+				e.field(
+					"Rating",
+					format!("{} ({})", vn.rating.unwrap(), vn.votecount.unwrap()),
+					true,
+				);
+			}
+			if !devstring.is_empty() {
+				e.field("Developers", devstring.join(" & "), true);
+			}
+			if !languages.is_empty() {
+				e.field("Languages", languages.join(", "), true);
+			}
+			if vn.original.is_some() {
+				e.field("Original title", vn.original.as_ref().unwrap(), true);
+			}
+			if !tags.is_empty() {
+				e.field("Tags", tags_string.join(", "), true);
+			}
+			e
+		});
+		m
+	})
+	.await
+	.unwrap();
     Ok(())
 }
 
@@ -306,7 +267,7 @@ async fn get_vn(
             .stats(),
         filters: message::request::get::Filters::new().filter(format!(
             "search ~ \"{}\"",
-            title.replace("\\", "").replace("\"", "\\\"")
+            title.replace('\\', "").replace('\"', "\\\"")
         )),
         options: Some(message::request::get::Options {
             page: Some(1),

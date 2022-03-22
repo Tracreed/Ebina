@@ -156,6 +156,8 @@ pub async fn weather(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 }
 
 #[command]
+#[aliases("s")]
+#[usage = "<image_link> or <attached image>"]
 #[description = "Ask WolframAlpha questions about anything"]
 pub async fn wolf(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let app_id = env::var("WOLFRAM_ALPHA").expect("WOLFRAM_ALPHA needs to be set");
@@ -205,14 +207,15 @@ pub async fn wolf(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 }
 
 #[command]
+#[description = "Get the sauce of an image from SauceNAO"]
 pub async fn sauce(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 	let api_key = env::var("SAUCENAO").expect("SAUCENAO needs to be set");
 	let url_arg = args.single::<String>();
-	let url;
-	if !msg.attachments.is_empty() {
-		url = msg.attachments[0].url.clone();
+	
+	let url = if !msg.attachments.is_empty() {
+		msg.attachments[0].url.clone()
 	} else {
-		url = match url_arg {
+		match url_arg {
 			Ok(u) => u,
 			Err(_) => {
 				msg.channel_id
@@ -228,7 +231,7 @@ pub async fn sauce(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
 					return Ok(())
 			}
 		}
-	}
+	};
 
 	let handler = HandlerBuilder::default().api_key(&api_key).num_results(1).build();
 

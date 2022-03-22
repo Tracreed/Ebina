@@ -18,6 +18,8 @@ use uuid::Uuid;
 
 use url::Url;
 
+use crate::utils::options::{send_options, Options};
+
 const MANGADEX_COLOR: serenity::utils::Colour = Colour::from_rgb(246, 131, 40);
 
 #[command]
@@ -31,9 +33,8 @@ pub async fn manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let manga_res = client
         .manga()
         .search()
-        .includes(vec![ReferenceExpansionResource::Author, ReferenceExpansionResource::Artist])
         .title(title)
-		.limit(1u32)
+		.limit(10u32)
         .build()?
         .send()
         .await.unwrap();
@@ -50,129 +51,23 @@ pub async fn manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 		}).await?;
 		return Ok(())
 	}
-    let manga = manga_res.data[0].clone();
 
-    info!("{:#?}", manga);
+	let mut options: Vec<String> = Vec::new();
 
-    let manga_title = manga
-        .attributes
-        .title
-		.values()
-		.next()
-        .unwrap();
-    let manga_description = manga
-        .attributes
-        .description
-        .get_key_value(&Language::English);
-    let manga_cover_id = manga
-        .relationships
-        .iter()
-        .find(|related| related.type_ == RelationshipType::CoverArt)
-        .expect("no cover art found for manga")
-        .id;
-    let manga_cover = client
-        .cover()
-        .get()
-        .cover_id(&manga_cover_id)
-        .build()?
-        .send()
-        .await?;
-    let manga_authors = manga
-        .relationships
-        .iter()
-        .filter(|related| related.type_ == RelationshipType::Author)
-        .collect::<Vec<_>>();
+	for m in &manga_res.data {
+		options.push(m.attributes.title.values().next().unwrap().to_string())
+	}
 
-    let manga_artists = manga
-        .relationships
-        .iter()
-        .filter(|related| related.type_ == RelationshipType::Artist)
-        .collect::<Vec<_>>();
+	let index = Options::new(ctx, msg)
+		.title("Enter the number corresponding the Manga you want info about!".to_string())
+		.options(options)
+		.colour(MANGADEX_COLOR)
+		.author(mangadex_author)
+		.send()
+		.await;
+    let manga = manga_res.data[index.unwrap().0].clone();
 
-    let _ = &msg
-        .channel_id
-        .send_message(&ctx.http, |m| {
-            m.embed(|e| {
-                info!("{:#?}", manga_title);
-                e.title(manga_title);
-                e.color(Colour::from_rgb(246, 131, 40));
-                e.url(format!("https://mangadex.org/title/{}", manga.id));
-                e.thumbnail(&format!(
-                    "{}/covers/{}/{}",
-                    CDN_URL, manga.id, manga_cover.data.attributes.file_name
-                ));
-
-				if let Some(desc) = manga_description {
-					e.description(fix_description(desc.1));
-				}
-                e.set_author(mangadex_author);
-
-                if !manga_authors.is_empty() {
-                    e.field(
-                        "Authors",
-                        manga_authors
-                            .iter()
-                            .map(|auth| {
-                                let attri = auth.attributes.as_ref().unwrap();
-                                match attri {
-                                    RelatedAttributes::Author(a) => a.name.as_str(),
-                                    _ => unreachable!(),
-                                }
-                            })
-                            .collect::<Vec<_>>()
-                            .join(", "),
-                        true,
-                    );
-                }
-
-                if !manga_artists.is_empty() {
-                    e.field(
-                        "Artists",
-                        manga_artists
-                            .iter()
-                            .map(|auth| {
-                                let attri = auth.attributes.as_ref().unwrap();
-                                match attri {
-                                    RelatedAttributes::Author(a) => a.name.as_str(),
-                                    _ => unreachable!(),
-                                }
-                            })
-                            .collect::<Vec<_>>()
-                            .join(", "),
-                        true,
-                    );
-                }
-
-                if manga.attributes.publication_demographic.is_some() {
-                    e.field(
-                        "Demographic",
-                        manga.attributes.publication_demographic.unwrap(),
-                        true,
-                    );
-                }
-
-				e.field("Publication Status", manga.attributes.status, true);
-
-                /*if manga.artists().len() > 0 {
-                    e.field("Artist", manga.artists().join(", "), true);
-                }
-
-                if contents.len() > 0 {
-                    e.field("Content", contents.join(", "), true);
-                }
-                if formats.len() > 0 {
-                    e.field("Format", formats.join(", "), true);
-                }
-                e.field("Rating", format!("Bayesian rating: {}\nMean rating: {}\nUsers: {}", manga.rating().bayesian(), manga.rating().mean(), manga.rating().users()), true);
-                e.field("Pub. Status", manga.publication().status(), true);
-                if genres.len() > 0 {
-                    e.field("Genre", genres.join(", "), true);
-                }*/
-                e
-            });
-            m
-        })
-        .await?;
+	send_md_embed(ctx, msg, manga.id).await;
     Ok(())
 }
 
@@ -191,14 +86,27 @@ pub async fn manage_md_url(ctx: &Context, msg: &Message, url: Url) {
 		None => return,
 	};
 
+	send_md_embed(ctx, msg, id).await;
+}
+
+async fn send_md_embed(ctx: &Context, msg: &Message, id: Uuid) {
 	let client = MangaDexClient::default();
 
-	let manga_res = client.manga().get().manga_id(&id).includes(vec![ReferenceExpansionResource::Author, ReferenceExpansionResource::Artist]).build().unwrap().send().await.unwrap();
+	let manga_res = client
+		.manga()
+		.get()
+		.manga_id(&id)
+		.includes(vec![ReferenceExpansionResource::Author, ReferenceExpansionResource::Artist])
+		.build()
+		.unwrap()
+		.send()
+		.await
+		.unwrap();
 
 	let manga = manga_res.data.clone();
 
 	info!("{:#?}", manga);
-	
+
 	let mangadex_author = CreateEmbedAuthor::default().icon_url("https://i.imgur.com/gFzVv6g.png").name("MangaDex").url("https://mangadex.org/").clone();
 
 
@@ -238,7 +146,7 @@ pub async fn manage_md_url(ctx: &Context, msg: &Message, url: Url) {
         .collect::<Vec<_>>();
 
 	let manga_genres = manga.attributes.tags.iter().filter(|tag| tag.attributes.group == TagGroup::Genre).collect::<Vec<_>>();
-	
+
 	let manga_theme = manga.attributes.tags.iter().filter(|tag| tag.attributes.group == TagGroup::Theme).collect::<Vec<_>>();
 
 	let manga_format = manga.attributes.tags.iter().filter(|tag| tag.attributes.group == TagGroup::Format).collect::<Vec<_>>();

@@ -5,13 +5,14 @@ use serenity::model::prelude::*;
 use serenity::utils::Colour;
 use serenity::builder::CreateEmbedAuthor;
 
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 use html2md::parse_html;
 
 use ebina_anilist::{search, search_specific, get_schedule, queries::queries::MediaType};
 
 use crate::anilist_embed;
+use crate::utils::options::send_options;
 
 const ANI_LIST_COLOR: serenity::utils::Colour = Colour::from_rgb(43, 45, 66);
 
@@ -36,7 +37,7 @@ pub async fn anilist_anime(ctx: &Context, msg: &Message, args: Args) -> CommandR
 }
 
 #[command("schedule")]
-pub async fn anilist_schedule(ctx: &Context, msg: &Message) -> CommandResult {
+pub async fn anilist_schedule(_ctx: &Context, _msg: &Message) -> CommandResult {
 	let today = chrono::DateTime::<Utc>::from(SystemTime::now());
 	println!("{}", today);
 	let results = get_schedule(today).await.unwrap();
@@ -93,7 +94,7 @@ pub async fn anilist_media(ctx: &Context, msg: &Message, args: Args, media_type:
 		None => "Media".to_string(),
 	};
 
-	let index = send_options(ctx, msg, format!("Enter the number corresponding the {} you want info about!", options_title.to_lowercase()), options, ANI_LIST_COLOR, ani_list_author.clone()).await;
+	let index = send_options(ctx, msg, format!("Enter the number corresponding the {} you want info about!", options_title.to_lowercase()), options, Some(ANI_LIST_COLOR), Some(ani_list_author.clone())).await;
 	if index.is_none() {
 		return Ok(())
 	}
@@ -167,75 +168,4 @@ pub async fn anilist_media(ctx: &Context, msg: &Message, args: Args, media_type:
 	}).await?;
 
 	Ok(())
-}
-
-async fn send_options(ctx: &Context, msg: &Message, title: String, options: Vec<String>, colour: Colour, author: CreateEmbedAuthor) -> Option<(usize, MessageId, ChannelId)> {
-	let mut options_vec = Vec::<String>::new();
-
-	for (i, option) in options.iter().enumerate() {
-		options_vec.push(format!("{}. {}", i + 1, option))
-	}
-	options_vec.push("Cancel".to_string());
-
-	let choice_embed = msg.channel_id
-		.send_message(&ctx.http, |m| {
-			m.embed(|e| {
-				e.title(title);
-				e.description(options_vec.join("\n"));
-				e.color(colour);
-				e.set_author(author);
-				e
-			});
-			m
-		}).await.unwrap();
-
-	let mut re_index = 0usize;
-
-	let mut cancel = false;
-	
-	if options_vec.len() == 2 {
-		return Some((re_index, choice_embed.id, choice_embed.channel_id));
-	}
-
-	if let Some(message) = &msg
-        .author
-        .await_reply(&ctx)
-        .channel_id(msg.channel_id)
-        .timeout(Duration::from_secs(60))
-		.filter(|m| {
-			if is_string_numeric(m.content.clone()) {
-				true
-			} else {
-				m.content.to_lowercase().eq("cancel")
-			}
-		})
-        .await
-    {
-        let num: i32;
-        let lenvn = options.len() as i32;
-        num = message.content.parse::<i32>().unwrap_or(-1);
-        if num <= lenvn && num > 0 {
-            re_index = (num - 1) as usize;
-            message.delete(&ctx.http).await.unwrap();
-        } else if message.content.to_lowercase() == *"cancel" {
-            cancel = true;
-            message.delete(&ctx.http).await.unwrap();
-        }
-    }
-
-	if cancel {
-		choice_embed.delete(&ctx.http).await.unwrap();
-		return None;
-	}
-	//choice_embed.delete(&ctx.http).await.unwrap();
-    Some((re_index, choice_embed.id, choice_embed.channel_id))
-}
-
-fn is_string_numeric(str: String) -> bool {
-    for c in str.chars() {
-        if !c.is_numeric() {
-            return false;
-        }
-    }
-    true
 }

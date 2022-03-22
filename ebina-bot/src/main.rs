@@ -2,6 +2,7 @@ mod commands;
 
 pub mod models;
 pub mod schema;
+pub mod utils;
 
 use std::{collections::HashSet, env, sync::{Arc, atomic::AtomicBool}};
 
@@ -38,12 +39,12 @@ use crate::models::*;
 use tokio::signal::unix::{signal, SignalKind};
 
 use tracing::{error, info};
-use tracing_subscriber::{EnvFilter, FmtSubscriber};
+use tracing_subscriber::FmtSubscriber;
 
 use url::Url;
 
 use commands::{
-    anilist::*, charades::*, general::*, mangadex::*, moderation::*, osu::*, owner::*, vndb::*, helium::*,
+    anilist::*, charades::*, general::*, mangadex::*, moderation::*, osu::*, owner::*, vndb::*
 };
 
 embed_migrations!();
@@ -132,18 +133,22 @@ impl EventHandler for Handler {
 	}
 }
 
-/// Handle messages that are just URLs to respond with
+/// Handle messages that are just URLs.
 async fn handle_url(ctx: &Context, msg: &Message, url: Url) {
-	let domain = url.domain().unwrap();
+	let domain = match url.domain() {
+		Some(v) => v,
+		None => {
+			error!("Something went wrong with the url: {}", url);
+			return
+		},
+	};
+
 	match domain {
 		"mangadex.org" => {
 			manage_md_url(ctx, msg, url).await;
 		}
 		"anilist.co" => {
 
-		}
-		"explorer.helium.org" => {
-			manage_helium_url(ctx, msg, url).await;
 		}
 		_ => {},
 	}
@@ -168,11 +173,6 @@ struct Osu;
 #[commands(ban, kick, userinfo, guildinfo, avatar, clear)]
 #[description = "Commands related to moderation"]
 struct Moderation;
-
-#[group]
-#[commands(hotspot)]
-#[description = "Commands related to Helium"]
-struct Helium;
 
 /* #[group]
 #[prefix = "feed"]
@@ -201,7 +201,6 @@ async fn main() {
     // In this case, a good default is setting the environment variable
     // `RUST_LOG` to debug`.
     let subscriber = FmtSubscriber::builder()
-        .with_env_filter(EnvFilter::from_default_env())
         .finish();
 
     tracing::subscriber::set_global_default(subscriber).expect("Failed to start the logger");
@@ -264,8 +263,7 @@ async fn main() {
         .group(&OSU_GROUP)
         .group(&MODERATION_GROUP)
         .group(&MANGADEX_GROUP)
-        .group(&ANILIST_GROUP)
-		.group(&HELIUM_GROUP);
+        .group(&ANILIST_GROUP);
 
     let mut client = Client::builder(&token)
         .framework(framework)
