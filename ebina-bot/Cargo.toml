@@ -7,15 +7,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.0", features = ["macros", "signal", "rt-multi-thread"] }
-tracing = "0.1"
+tokio = { version = "1.17.0", features = ["macros", "signal", "rt-multi-thread"] }
+tracing = "0.1.32"
 tracing-subscriber = "0.3.9"
 tracing-futures = "0.2" # needed so intrument works with async functions.
-diesel = { version = "1.4.4", features = ["postgres", "numeric"] }
+diesel = { version = "1.4.8", features = ["postgres", "numeric"] }
 bigdecimal = { version = "0.1.2", optional = true}
 vndb = { git="https://github.com/Tracreed/vndb.rs", features = ["tokio-on"] }
 serde_json = "1.0"
-serde = "1.0.123"
+serde = "1.0.136"
 diesel-derive-enum = { version = "1", features = ["postgres"] }
 regex = "1"
 isolang = "2.1.0"
@@ -25,8 +25,8 @@ osu_v2 = { git = "https://git.fuyu.moe/Tracreed/osu_v2"}
 read_color = "1.0.0"
 chrono = "0.4.19"
 humantime = "2.1.0"
-reqwest = "0.11.1"
-roxmltree = "0.14.0"
+reqwest = "0.11.10"
+roxmltree = "0.14.1"
 url = "2.2.2"
 mangadex-api = { git = "https://gitlab.com/gondolyr/mangadex-api", features = ["multi-thread"] }
 openweather = { git = "https://github.com/Tracreed/openweather"}
