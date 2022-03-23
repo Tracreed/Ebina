@@ -2,9 +2,7 @@ FROM rust:1.59.0-buster as builder
 
 RUN apt-get install libpq-dev
 RUN mkdir -p /build
-COPY ebina-bot /build/ebina-bot
-COPY ebina-anilist /build/ebina-anilist
-COPY ebina-web /build/ebina-web
+COPY ./ /build
 WORKDIR /build/ebina-bot
 RUN cargo build --release
 
