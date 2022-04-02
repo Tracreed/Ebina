@@ -24,7 +24,7 @@ use serenity::{
     framework::{
         standard::macros::{group, help},
         standard::{
-            help_commands, Args, CommandGroup, CommandResult, HelpOptions, StandardFramework,
+            help_commands, Args, CommandGroup, CommandResult, HelpOptions, StandardFramework, macros::hook,
         },
     },
     http::Http,
@@ -46,6 +46,8 @@ use url::Url;
 use commands::{
     anilist::*, charades::*, general::*, mangadex::*, moderation::*, osu::*, owner::*, vndb::*
 };
+
+use ebina_types::*;
 
 embed_migrations!();
 
@@ -135,6 +137,7 @@ impl EventHandler for Handler {
 
 /// Handle messages that are just URLs.
 async fn handle_url(ctx: &Context, msg: &Message, url: Url) {
+	// Check if the URL has a valid domain.
 	let domain = match url.domain() {
 		Some(v) => v,
 		None => {
@@ -143,15 +146,35 @@ async fn handle_url(ctx: &Context, msg: &Message, url: Url) {
 		},
 	};
 
+	// Send the url to the right handler.
 	match domain {
 		"mangadex.org" => {
-			manage_md_url(ctx, msg, url).await;
+			manage_md_url(ctx, msg, url.clone()).await;
 		}
 		"anilist.co" => {
 
 		}
-		_ => {},
+		_ => return,
 	}
+
+	// Increment the number of times the domain has been handled.
+	let mut data = ctx.data.write().await;
+	let counter = data.get_mut::<UrlCounter>().expect("Expected UrlCounter in TypeMap");
+	let entry = counter.entry(domain.to_string()).or_insert(0);
+	*entry += 1;
+}
+
+#[hook]
+async fn before(ctx: &Context, _msg: &Message, command_name: &str) -> bool {
+	// Increment the number of times this command has been run once. If
+    // the command's name does not exist in the counter, add a default
+    // value of 0.
+    let mut data = ctx.data.write().await;
+    let counter = data.get_mut::<CommandCounter>().expect("Expected CommandCounter in TypeMap.");
+    let entry = counter.entry(command_name.to_string()).or_insert(0);
+    *entry += 1;
+
+    true // if `before` returns false, command processing doesn't happen.
 }
 
 #[group]
@@ -160,6 +183,7 @@ struct General;
 
 #[group]
 #[commands(play, add)]
+#[description = "Commands for playing Charades."]
 struct Charades;
 
 #[group]
@@ -257,6 +281,7 @@ async fn main() {
                 .prefixes(vec![prefix.as_str(), "ebina "])
                 .on_mention(Some(bot_id))
         })
+		.before(before)
         .help(&MY_HELP)
         .group(&GENERAL_GROUP)
         .group(&CHARADES_GROUP)
@@ -270,6 +295,8 @@ async fn main() {
         .event_handler(Handler {
 			is_web_running: AtomicBool::new(false),
 		})
+		.type_map_insert::<CommandCounter>(HashMap::default())
+		.type_map_insert::<UrlCounter>(HashMap::default())
         .await
         .expect("Err creating client");
 

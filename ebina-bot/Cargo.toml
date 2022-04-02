@@ -39,6 +39,7 @@ helium-api = { git = "https://github.com/Tracreed/helium-api-rs" }
 diesel_migrations = "1.4.0"
 rustnao = { git = "https://github.com/Tracreed/RustNAO" }
 ebina-web = { version = "0.1.0", path = "../ebina-web" }
+ebina-types = { version = "0.1.0", path = "../ebina-types" }
 
 [features]
 numeric = ["bigdecimal"]

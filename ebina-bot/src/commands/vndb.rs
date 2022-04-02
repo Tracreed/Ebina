@@ -4,7 +4,7 @@ use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use std::error::Error;
-use tracing::{error, info};
+use tracing::error;
 
 use serde::{Deserialize, Serialize};
 //use serde_json::Result;

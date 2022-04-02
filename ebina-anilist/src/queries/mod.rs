@@ -119,6 +119,21 @@ pub mod queries {
 		pub month: Option<i32>,
 		pub year: Option<i32>,
 	}
+
+	impl Display for FuzzyDate {
+		fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+			if let Some(day) = self.day {
+				write!(f, "{}", day)?;
+			}
+			if let Some(month) = self.month {
+				write!(f, "{}", month)?;
+			}
+			if let Some(year) = self.year {
+				write!(f, "{}", year)?;
+			}
+			Ok(())
+		}
+	}
 	
 	#[derive(cynic::QueryFragment, Debug, Clone)]
     pub struct AiringSchedule {

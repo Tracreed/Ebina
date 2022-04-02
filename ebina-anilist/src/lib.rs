@@ -1,8 +1,7 @@
-use chrono::Timelike;
 //use graphql_client::{GraphQLQuery, Response};
 use cynic::{QueryBuilder, http::ReqwestExt};
 use queries::queries::MediaType;
-use std::error::Error;
+use std::{error::Error, ops::{Sub, Add}};
 
 const GQL_URL: &str = "https://graphql.anilist.co/";
 
@@ -45,13 +44,13 @@ S: Into<String> {
 
 pub async fn get_schedule(date_utc: chrono::DateTime<chrono::Utc>) -> Result<queries::queries::Schedule, Box<dyn Error>> {
 	use queries::queries::{Schedule, ScheduleArguments};
-	let off = chrono::FixedOffset::east(9 * 3600);
-	let date = date_utc.with_timezone(&off);
-	let start_time = date.timestamp() - (((date.hour() as i64 * 60) * 60) + (date.minute () as i64 * 60));
-	let end_time = date.timestamp() + ((24 - date.hour() as i64) * 60) * 60;
+	// Todays NaiveDatein UTC clamping to the start of the day
+	let date_utc_clamped = date_utc.date().and_hms(0, 0, 0);
+	// Todays dateTime in UTC clamping to the end of the day
+	let date_utc_clamped_end = date_utc_clamped.add(chrono::Duration::days(1)).sub(chrono::Duration::seconds(1));
 	let arguments = ScheduleArguments {
-		airing_at_greater: Some(start_time as i32),
-		airing_at_lesser: Some(end_time as i32),
+		airing_at_greater: Some(date_utc_clamped.timestamp() as i32),
+		airing_at_lesser: Some(date_utc_clamped_end.timestamp() as i32),
 	};
 	let operation = Schedule::build(arguments);
 	let client = reqwest::Client::new();

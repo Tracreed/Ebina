@@ -42,7 +42,7 @@ fn guilds() -> Html {
 		use_effect_with_deps(move |_| {
 			let guilds = guilds;
 			wasm_bindgen_futures::spawn_local(async move {
-				let f_guilds: crate::model::guilds::Guilds = Request::get("http://localhost:8081/api/guilds")
+				let f_guilds: crate::model::guilds::Guilds = Request::get("http://ebina.uwu.party:8081/api/guilds")
 					.send()
 					.await
 					.unwrap()

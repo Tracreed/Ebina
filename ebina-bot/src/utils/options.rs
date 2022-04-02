@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use serenity::{utils::Colour, builder::CreateEmbedAuthor, model::{channel::Message, id::{MessageId, ChannelId}}, client::Context};
 
+
 pub struct Options<'a> {
 	ctx: &'a Context,
 	msg: &'a Message,
@@ -27,28 +28,83 @@ impl<'a> Options<'a> {
 	}
 
 	/// Sets the title of the options
+	/// # Examples
+	/// ```rust,no_run
+	/// use ebina_bot::utils::options::Options;
+	/// 
+	/// let mut options = Options::new(&ctx, &msg);
+	/// options.title("Enter the number corresponding the Manga you want info about!");
+	/// ```
+	/// # Errors
+	/// Returns an error if the title is too long
+	/// # Panics
+	/// Panics if the title is not set
 	pub fn title<S>(mut self, title: S) -> Self
 	where S: Into<String> {
-		self.title = Some(title.into());
+		let title = title.into();
+		if title.len() > 256 {
+			panic!("Title is too long!");
+		}
+		self.title = Some(title);
 		self
 	}
 
 	/// Sets single option
+	/// # Examples
+	/// ```rust
+	/// use ebina_bot::utils::options::Options;
+	/// 
+	/// let options = Options::new(ctx, msg)
+	///     .option("option1")
+	///     .option("option2")
+	///     .option("option3")
+	///     .send()
+	///     .await;
+	/// ```
+	/// # Errors
+	/// Returns an error if the option is empty
 	pub fn option<S>(mut self, option: S) -> Self
 	where S: Into<String> {
+		// Check if option is
 		self.options.push(option.into());
 		self
 	}
 
 	/// Sets multiple options in one go
+	/// # Examples
+	/// ```rust
+	/// use ebina_bot::utils::options::Options;
+	///
+	/// let options = Options::new(ctx, msg)
+	///    .options(vec!["option1", "option2", "option3"])
+	///    .send()
+	///    .await;
+	/// ```
+	/// # Errors
+	/// Returns an error if any of the options are empty
+	/// # Panics
+	/// Panics if the options are empty
 	pub fn options(mut self, options: Vec<String>) -> Self {
-		for o in options {
-			self.options.push(o);
+		for option in &options {
+			if option.is_empty() {
+				panic!("Option is empty!");
+			}
 		}
+		self.options = options;
 		self
 	}
 
 	/// Sets the colour of the embed
+	/// # Examples
+	/// ```rust
+	/// use ebina_bot::utils::options::Options;
+	/// use serenity::utils::Colour;
+	///
+	/// let options = Options::new(ctx, msg)
+	///    .colour(Colour::from_rgb(255, 0, 0))
+	///    .send()
+	///    .await;
+	/// ```
 	pub fn colour(mut self, colour: Colour) -> Self {
 		self.colour = Some(colour);
 		self
@@ -61,6 +117,18 @@ impl<'a> Options<'a> {
 	}
 
 	/// If the embed should be for an edit or delete itself after the choice has been made
+	///
+	/// # Examples
+	/// ```rust
+	/// use ebina_bot::utils::options::Options;
+	///
+	/// let options = Options::new(ctx, msg)
+	///    .edit()
+	///   .send()
+	///  .await;
+	/// ```
+	/// # Panics
+	/// Panics if the edit is set to true and the message id is not set
 	pub fn edit(mut self) -> Self {
 		self.edit = true;
 		self
@@ -99,6 +167,7 @@ impl<'a> Options<'a> {
 			return Some((re_index, choice_embed.id, choice_embed.channel_id));
 		}
 
+		// Collect messages from user in the channel
 		if let Some(message) = &self.msg
 			.author
 			.await_reply(&self.ctx)
@@ -114,24 +183,30 @@ impl<'a> Options<'a> {
 			.await
 		{
 			let lenvn = self.options.len() as i32;
+			// Parse the reply as a number
 			let num = message.content.parse::<i32>().unwrap_or(-1);
 			if num <= lenvn && num > 0 {
 				re_index = (num - 1) as usize;
-				message.delete(&self.ctx.http).await.unwrap();
-			} else if message.content.to_lowercase() == *"cancel" {
+				// Remove the reply from user
+				message.delete(&self.ctx).await.ok();
+			} else if message.content.to_lowercase().eq("cancel") {
 				cancel = true;
-				message.delete(&self.ctx.http).await.unwrap();
+				// Remove the reply from user
+				message.delete(&self.ctx).await.ok();
 			}
 		}
 
+		// Deletes the message if the user cancels
 		if cancel {
-			choice_embed.delete(&self.ctx.http).await.unwrap();
+			choice_embed.delete(&self.ctx).await.ok();
 			return None;
 		}
 
+		// Deletes the message if it's not going to be edited
 		if !self.edit {
-			choice_embed.delete(&self.ctx.http).await.unwrap();
+			choice_embed.delete(&self.ctx).await.ok();
 		}
+
 		Some((re_index, choice_embed.id, choice_embed.channel_id))
 	}
 }

@@ -5,8 +5,6 @@ use serenity::model::prelude::*;
 use serenity::utils::Colour;
 use serenity::builder::CreateEmbedAuthor;
 
-use std::time::SystemTime;
-
 use html2md::parse_html;
 
 use ebina_anilist::{search, search_specific, get_schedule, queries::queries::MediaType};
@@ -15,6 +13,10 @@ use crate::anilist_embed;
 use crate::utils::options::Options;
 
 const ANI_LIST_COLOR: serenity::utils::Colour = Colour::from_rgb(43, 45, 66);
+// Anilist author constants
+const ANI_LIST_AUTHOR_NAME: &str = "Anilist";
+const ANI_LIST_AUTHOR_URL: &str = "https://anilist.co/";
+const ANI_LIST_AUTHOR_ICON_URL: &str = "https://anilist.co/img/icons/apple-touch-icon.png";
 
 /// Searches Anlist including both manga and anime.
 #[command("search")]
@@ -37,19 +39,80 @@ pub async fn anilist_anime(ctx: &Context, msg: &Message, args: Args) -> CommandR
 }
 
 #[command("schedule")]
-pub async fn anilist_schedule(_ctx: &Context, _msg: &Message) -> CommandResult {
-	let today = chrono::DateTime::<Utc>::from(SystemTime::now());
-	println!("{}", today);
+pub async fn anilist_schedule(ctx: &Context, msg: &Message) -> CommandResult {
+	//Convert the current time to UTC
+	let today = Utc::now();
+	//Get the schedule for the current day
 	let results = get_schedule(today).await.unwrap();
 
-	println!("{:#?}", results);
+	let schedule = results.page.unwrap().airing_schedules.unwrap();
+
+	// Anilist author
+	let ani_list_author = CreateEmbedAuthor::default()
+		.icon_url(ANI_LIST_AUTHOR_ICON_URL)
+		.name(ANI_LIST_AUTHOR_NAME)
+		.url(ANI_LIST_AUTHOR_URL)
+		.to_owned();
+
+	// temp schedule
+	let temp_schedule = schedule.clone();
+
+	// Find the next airing
+	let next_airing = temp_schedule.iter().find(|airing| {
+		let airing_at = chrono::DateTime::<Utc>::from_utc(
+			chrono::NaiveDateTime::from_timestamp(airing.as_ref().unwrap().airing_at as i64, 0),
+			Utc,
+		);
+		airing_at > today
+	});
+
+	// Create vector of strings representing the airing schedule
+	let mut schedule_strs: Vec<String> = Vec::new();
+	for schedule in schedule {
+		let mut schedule_str = String::new();
+		// Parse airing at as SystemTime
+		let s = std::time::UNIX_EPOCH + std::time::Duration::from_secs(schedule.as_ref().unwrap().airing_at.try_into().unwrap());
+		// Parse as DateTime with UTC timezone
+		let dt = chrono::DateTime::<Utc>::from(s);
+		let airing_at_str = dt.format("%H:%M").to_string();
+		schedule_str.push_str(airing_at_str.as_str());
+
+		schedule_str.push_str(" - ");
+		schedule_str.push_str(schedule.as_ref().unwrap().media.as_ref().unwrap().title.as_ref().unwrap().user_preferred.as_ref().unwrap());
+		// Add label to next airing
+		if let Some(airing) = next_airing {
+			if schedule.as_ref().unwrap().media.as_ref().unwrap().id == airing.as_ref().unwrap().media.as_ref().unwrap().id {
+				schedule_str.push_str(" **(Next)**");
+			}
+		}
+		schedule_strs.push(schedule_str);
+	}
+
+	// send embed containing the schedule for the day
+	let _ = msg.channel_id.send_message(ctx, |m| {
+		m.embed(|e| {
+			e.title("Anilist Schedule");
+			// Description including todays date
+			e.description(format!("Today's schedule: {}", today.format("%Y-%m-%d")));
+			e.color(ANI_LIST_COLOR);
+			e.timestamp(today);
+			e.set_author(ani_list_author);
+			e.field("Schedule", schedule_strs.join("\n"), false);
+			e
+		})
+	}).await?;
+
 	Ok(())
 }
 
 pub async fn anilist_media(ctx: &Context, msg: &Message, args: Args, media_type: Option<MediaType>) -> CommandResult {
 	let title = args.rest();
 	let media_list;
-	let ani_list_author = CreateEmbedAuthor::default().icon_url("https://anilist.co/img/icons/favicon-32x32.png").name("AniList").clone();
+	let ani_list_author = CreateEmbedAuthor::default()
+		.icon_url(ANI_LIST_AUTHOR_ICON_URL)
+		.name(ANI_LIST_AUTHOR_NAME)
+		.url(ANI_LIST_AUTHOR_URL)
+		.to_owned();
 
 	if media_type.is_none() {
 		let results = search(title).await.unwrap();

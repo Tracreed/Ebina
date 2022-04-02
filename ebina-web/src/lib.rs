@@ -1,4 +1,5 @@
 mod models;
+mod prometheus;
 
 use tide::{Request, Response, Body};
 
@@ -6,9 +7,10 @@ use serenity::prelude::Context;
 use serenity::model::id::GuildId;
 use http_types::headers::HeaderValue;
 use tide::security::{CorsMiddleware, Origin};
+use crate::prometheus::prometheus_metrics;
 
 #[derive(Clone)]
-struct State {
+pub struct State {
 	ctx: Context
 }
 
@@ -37,6 +39,7 @@ impl WebApp {
 		app.at("/api/status").get(status);
 		app.at("/api/guilds").get(guilds);
 		app.at("/api/guild/:id").get(get_guild);
+		app.at("/metrics").get(prometheus_metrics);
 		WebApp {
 			app
 		}

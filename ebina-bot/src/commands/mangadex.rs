@@ -2,7 +2,7 @@ use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::*;
-use serenity::builder::CreateEmbedAuthor;
+use serenity::builder::{CreateEmbedAuthor, CreateEmbed};
 
 use mangadex_api::types::{Language, TagGroup};
 use mangadex_api::types::{RelationshipType, ReferenceExpansionResource};
@@ -10,7 +10,7 @@ use mangadex_api::v5::schema::RelatedAttributes;
 use mangadex_api::MangaDexClient;
 use mangadex_api::CDN_URL;
 
-use tracing::info;
+use tracing::{info, error};
 
 use regex::Regex;
 
@@ -63,11 +63,12 @@ pub async fn manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 		.options(options)
 		.colour(MANGADEX_COLOR)
 		.author(mangadex_author)
+		.edit()
 		.send()
 		.await;
     let manga = manga_res.data[index.unwrap().0].clone();
 
-	send_md_embed(ctx, msg, manga.id).await;
+	send_md_embed(ctx, msg, manga.id, true, Some(index.unwrap().1), Some(index.unwrap().2)).await;
     Ok(())
 }
 
@@ -86,10 +87,10 @@ pub async fn manage_md_url(ctx: &Context, msg: &Message, url: Url) {
 		None => return,
 	};
 
-	send_md_embed(ctx, msg, id).await;
+	send_md_embed(ctx, msg, id, false, None, None).await;
 }
 
-async fn send_md_embed(ctx: &Context, msg: &Message, id: Uuid) {
+async fn send_md_embed(ctx: &Context, msg: &Message, id: Uuid, edit: bool, message_id: Option<MessageId>, channel_id: Option<ChannelId>) {
 	let client = MangaDexClient::default();
 
 	let manga_res = client
@@ -151,131 +152,139 @@ async fn send_md_embed(ctx: &Context, msg: &Message, id: Uuid) {
 
 	let manga_format = manga.attributes.tags.iter().filter(|tag| tag.attributes.group == TagGroup::Format).collect::<Vec<_>>();
 
-    let _ = &msg
-        .channel_id
-        .send_message(&ctx.http, |m| {
-            m.embed(|e| {
-                info!("{:#?}", manga_title);
-                e.title(manga_title);
-                e.color(Colour::from_rgb(246, 131, 40));
-                e.url(format!("https://mangadex.org/title/{}", manga.id));
-                e.thumbnail(&format!(
-                    "{}/covers/{}/{}",
-                    CDN_URL, manga.id, manga_cover.data.attributes.file_name
-                ));
+	let mut embed = CreateEmbed::default();
+	info!("{:#?}", manga_title);
+	embed.title(manga_title);
+	embed.color(Colour::from_rgb(246, 131, 40));
+	embed.url(format!("https://mangadex.org/title/{}", manga.id));
+	embed.thumbnail(&format!(
+		"{}/covers/{}/{}",
+		CDN_URL, manga.id, manga_cover.data.attributes.file_name
+	));
 
-				if let Some(desc) = manga_description {
-					e.description(fix_description(desc.1));
-				}
-                e.set_author(mangadex_author);
+	if let Some(desc) = manga_description {
+		embed.description(fix_description(desc.1));
+	}
+	embed.set_author(mangadex_author);
 
-                if !manga_authors.is_empty() {
-                    e.field(
-                        "Authors",
-                        manga_authors
-                            .iter()
-                            .map(|auth| {
-                                let attri = auth.attributes.as_ref().unwrap();
-                                match attri {
-                                    RelatedAttributes::Author(a) => a.name.as_str(),
-                                    _ => unreachable!(),
-                                }
-                            })
-                            .collect::<Vec<_>>()
-                            .join(", "),
-                        true,
-                    );
-                }
+	if !manga_authors.is_empty() {
+		embed.field(
+			"Authors",
+			manga_authors
+				.iter()
+				.map(|auth| {
+					let attri = auth.attributes.as_ref().unwrap();
+					match attri {
+						RelatedAttributes::Author(a) => a.name.as_str(),
+						_ => unreachable!(),
+					}
+				})
+				.collect::<Vec<_>>()
+				.join(", "),
+			true,
+		);
+	}
 
-                if !manga_artists.is_empty() {
-                    e.field(
-                        "Artists",
-                        manga_artists
-                            .iter()
-                            .map(|auth| {
-                                let attri = auth.attributes.as_ref().unwrap();
-                                match attri {
-                                    RelatedAttributes::Author(a) => a.name.as_str(),
-                                    _ => unreachable!(),
-                                }
-                            })
-                            .collect::<Vec<_>>()
-                            .join(", "),
-                        true,
-                    );
-                }
+	if !manga_artists.is_empty() {
+		embed.field(
+			"Artists",
+			manga_artists
+				.iter()
+				.map(|auth| {
+					let attri = auth.attributes.as_ref().unwrap();
+					match attri {
+						RelatedAttributes::Author(a) => a.name.as_str(),
+						_ => unreachable!(),
+					}
+				})
+				.collect::<Vec<_>>()
+				.join(", "),
+			true,
+		);
+	}
 
-                if manga.attributes.publication_demographic.is_some() {
-                    e.field(
-                        "Demographic",
-                        manga.attributes.publication_demographic.unwrap(),
-                        true,
-                    );
-                }
+	if manga.attributes.publication_demographic.is_some() {
+		embed.field(
+			"Demographic",
+			manga.attributes.publication_demographic.unwrap(),
+			true,
+		);
+	}
 
-				if !manga_genres.is_empty() {
-					e.field(
-                        "Genres",
-                        manga_genres
-                            .iter()
-                            .map(|tag| {
-                                tag.attributes.name.values().next().unwrap().as_str()
-                            })
-                            .collect::<Vec<_>>()
-                            .join(", "),
-                        true,
-                    );
-				}
+	if !manga_genres.is_empty() {
+		embed.field(
+			"Genres",
+			manga_genres
+				.iter()
+				.map(|tag| {
+					tag.attributes.name.values().next().unwrap().as_str()
+				})
+				.collect::<Vec<_>>()
+				.join(", "),
+			true,
+		);
+	}
 
-				if !manga_theme.is_empty() {
-					e.field(
-                        "Theme",
-                        manga_theme
-                            .iter()
-                            .map(|tag| {
-                                tag.attributes.name.values().next().unwrap().as_str()
-                            })
-                            .collect::<Vec<_>>()
-                            .join(", "),
-                        true,
-                    );
-				}
+	if !manga_theme.is_empty() {
+		embed.field(
+			"Theme",
+			manga_theme
+				.iter()
+				.map(|tag| {
+					tag.attributes.name.values().next().unwrap().as_str()
+				})
+				.collect::<Vec<_>>()
+				.join(", "),
+			true,
+		);
+	}
 
-				if !manga_format.is_empty() {
-					e.field(
-                        "Format",
-                        manga_format
-                            .iter()
-                            .map(|tag| {
-                                tag.attributes.name.values().next().unwrap().as_str()
-                            })
-                            .collect::<Vec<_>>()
-                            .join(", "),
-                        true,
-                    );
-				}
-				e.field("Publication Status", manga.attributes.status, true);
+	if !manga_format.is_empty() {
+		embed.field(
+			"Format",
+			manga_format
+				.iter()
+				.map(|tag| {
+					tag.attributes.name.values().next().unwrap().as_str()
+				})
+				.collect::<Vec<_>>()
+				.join(", "),
+			true,
+		);
+	}
+	embed.field("Publication Status", manga.attributes.status, true);
 
-                /*if manga.artists().len() > 0 {
-                    e.field("Artist", manga.artists().join(", "), true);
-                }
+	/*if manga.artists().len() > 0 {
+		e.field("Artist", manga.artists().join(", "), true);
+	}
 
-                if contents.len() > 0 {
-                    e.field("Content", contents.join(", "), true);
-                }
-                if formats.len() > 0 {
-                    e.field("Format", formats.join(", "), true);
-                }
-                e.field("Rating", format!("Bayesian rating: {}\nMean rating: {}\nUsers: {}", manga.rating().bayesian(), manga.rating().mean(), manga.rating().users()), true);
-                e.field("Pub. Status", manga.publication().status(), true);
-                if genres.len() > 0 {
-                    e.field("Genre", genres.join(", "), true);
-                }*/
-                e
-            });
-            m
-        })
-        .await.unwrap();
+	if contents.len() > 0 {
+		e.field("Content", contents.join(", "), true);
+	}
+	if formats.len() > 0 {
+		e.field("Format", formats.join(", "), true);
+	}
+	e.field("Rating", format!("Bayesian rating: {}\nMean rating: {}\nUsers: {}", manga.rating().bayesian(), manga.rating().mean(), manga.rating().users()), true);
+	e.field("Pub. Status", manga.publication().status(), true);
+	if genres.len() > 0 {
+		e.field("Genre", genres.join(", "), true);
+	}*/
+
+	// Check if edit is true and if so edit the message instead
+	if edit {
+		// Get message from message ID
+		let mut mess = match ctx.http.get_message(channel_id.unwrap().into(), message_id.unwrap().into() ).await {
+			Ok(msg) => msg,
+			Err(why) => {
+				error!("Error getting message: {:?}", why);
+				return;
+			}
+		};
+		let _ = mess.edit(&ctx, |m| m.set_embed(embed)).await;
+	} else {
+		let _ = &msg.channel_id.send_message(&ctx.http, |m| m.set_embed(embed)).await;
+	}
+
 }
 
 fn fix_description<S: Into<String>>(description: S) -> String {

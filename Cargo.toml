@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "ebina-bot",
-    "ebina-webhook",
+    "ebina-types",
     "ebina-anilist",
     "ebina-web",
     "ebina-web-dashboard"
