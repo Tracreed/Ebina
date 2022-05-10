@@ -4,9 +4,7 @@ A bot written in rust.
 Uses Serenity and Diesel.
 
 Todo
-- Fix Mangadex commands
-- Complete webhook listener
-- Refactor
+- Add Mangadex link command
 
 ## Features
  - osu! commands

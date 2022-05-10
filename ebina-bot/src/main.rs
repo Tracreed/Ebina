@@ -28,7 +28,7 @@ use serenity::{
         },
     },
     http::Http,
-    model::prelude::*,
+    model::{prelude::*, interactions::application_command::ApplicationCommand},
     prelude::*,
 };
 
@@ -97,8 +97,15 @@ struct Handler {
 impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         info!("Connected as {}", ready.user.name);
-        let guilds = ctx.cache.guilds().await.len();
+        let guilds = ctx.cache.guilds().len();
         info!("Guilds in cache: {}", guilds);
+
+		let guild_command = ApplicationCommand::create_global_application_command(&ctx, |command| {
+			command.name("ping").description("Pings the bot.")
+		})
+		.await;
+
+		info!("Created guild command: {:?}", guild_command);
     }
 
     async fn resume(&self, _: Context, _: ResumedEvent) {
@@ -133,6 +140,27 @@ impl EventHandler for Handler {
 		}
 		self.is_web_running.swap(true, std::sync::atomic::Ordering::Relaxed);
 	}
+
+	async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+		if let Interaction::ApplicationCommand(command) = interaction {
+			let content = match command.data.name.as_str() {
+				"ping" => "Pong!",
+				"pong" => "Ping!",
+				_ => "Unknown command",
+			};
+
+			if let Err(why) = command
+				.create_interaction_response(&ctx, |response| {
+					response
+						.kind(InteractionResponseType::ChannelMessageWithSource)
+						.interaction_response_data(|message| message.content(content))
+				})
+				.await
+			{
+				error!("Error sending interaction response: {:?}", why);
+			}
+		}
+	}
 }
 
 /// Handle messages that are just URLs.
@@ -165,14 +193,15 @@ async fn handle_url(ctx: &Context, msg: &Message, url: Url) {
 }
 
 #[hook]
-async fn before(ctx: &Context, _msg: &Message, command_name: &str) -> bool {
+async fn before(ctx: &Context, msg: &Message, command_name: &str) -> bool {
 	// Increment the number of times this command has been run once. If
     // the command's name does not exist in the counter, add a default
     // value of 0.
-    let mut data = ctx.data.write().await;
+	
+    /*let mut data = ctx.data.write().await;
     let counter = data.get_mut::<CommandCounter>().expect("Expected CommandCounter in TypeMap.");
     let entry = counter.entry(command_name.to_string()).or_insert(0);
-    *entry += 1;
+    *entry += 1;*/
 
     true // if `before` returns false, command processing doesn't happen.
 }
@@ -204,7 +233,7 @@ struct Moderation;
 struct Feed; */
 
 #[group]
-#[commands(manga)]
+#[commands(manga, link)]
 //#[sub_groups(feed)]
 #[default_command(manga)]
 #[prefix("md")]
@@ -232,7 +261,12 @@ async fn main() {
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
     let prefix = env::var("PREFIX").expect("Expected a prefix in the environment");
 
-    let http = Http::new_with_token(&token);
+	let application_id: u64 = env::var("APPLICATION_ID")
+        .expect("Expected an application id in the environment")
+        .parse()
+        .expect("application id is not a valid id");
+
+    let http = Http::new(&token);
 
 	let connection = establish_connection();
 
@@ -242,9 +276,15 @@ async fn main() {
     let (owners, bot_id) = match http.get_current_application_info().await {
         Ok(info) => {
             let mut owners = HashSet::new();
-            owners.insert(info.owner.id);
-
-            (owners, info.id)
+			if let Some(team) = info.team {
+                owners.insert(team.owner_user_id);
+            } else {
+                owners.insert(info.owner.id);
+            }
+            match http.get_current_user().await {
+                Ok(bot_id) => (owners, bot_id.id),
+                Err(why) => panic!("Could not access the bot id: {:?}", why),
+            }
         }
         Err(why) => panic!("Could not access application info: {:?}", why),
     };
@@ -290,11 +330,15 @@ async fn main() {
         .group(&MANGADEX_GROUP)
         .group(&ANILIST_GROUP);
 
-    let mut client = Client::builder(&token)
+	let intents = GatewayIntents::GUILD_MESSAGES
+        | GatewayIntents::DIRECT_MESSAGES
+        | GatewayIntents::MESSAGE_CONTENT;
+    let mut client = Client::builder(&token, intents)
         .framework(framework)
         .event_handler(Handler {
 			is_web_running: AtomicBool::new(false),
 		})
+		.application_id(application_id)
 		.type_map_insert::<CommandCounter>(HashMap::default())
 		.type_map_insert::<UrlCounter>(HashMap::default())
         .await

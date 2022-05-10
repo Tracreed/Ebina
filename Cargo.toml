@@ -2,6 +2,7 @@
 members = [
     "ebina-bot",
     "ebina-types",
+	"ebina-macro",
     "ebina-anilist",
     "ebina-web",
     "ebina-web-dashboard"

@@ -9,7 +9,7 @@ use serenity::utils::MessageBuilder;
 pub async fn ban(ctx: &Context, msg: &Message) -> CommandResult {
     let users = &msg.mentions;
     for user in users {
-        let guild = msg.guild(&ctx).await.unwrap();
+        let guild = msg.guild(&ctx).unwrap();
         let _ = match guild.ban(ctx, user, 1).await {
             Ok(v) => v,
             Err(why) => {
@@ -26,7 +26,7 @@ pub async fn ban(ctx: &Context, msg: &Message) -> CommandResult {
 pub async fn kick(ctx: &Context, msg: &Message) -> CommandResult {
     let users = &msg.mentions;
     for user in users {
-        let _ = msg.guild(&ctx).await.unwrap().kick(&ctx, user.id).await?;
+        let _ = msg.guild(&ctx).unwrap().kick(&ctx, user.id).await?;
     }
     msg.channel_id.say(&ctx, "Kicked").await?;
     Ok(())
@@ -35,7 +35,7 @@ pub async fn kick(ctx: &Context, msg: &Message) -> CommandResult {
 #[command]
 #[aliases("uinfo")]
 pub async fn userinfo(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
     let id = args.single::<u64>().unwrap_or(msg.author.id.0);
     let user = if msg.mentions.is_empty() {
         ctx.http.get_user(id).await?
@@ -43,7 +43,7 @@ pub async fn userinfo(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
         msg.mentions[0].clone()
     };
     let gmember = guild.member(&ctx, &user.id).await.unwrap();
-    let roles = gmember.roles(&ctx).await.unwrap_or_default();
+    let roles = gmember.roles(&ctx).unwrap_or_default();
     msg.channel_id
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
@@ -100,7 +100,7 @@ pub async fn avatar(ctx: &Context, msg: &Message, mut args: Args) -> CommandResu
 #[command]
 #[aliases("ginfo")]
 pub async fn guildinfo(ctx: &Context, msg: &Message) -> CommandResult {
-    let guild = msg.guild(ctx).await.unwrap();
+    let guild = msg.guild(ctx).unwrap();
     msg.channel_id
         .send_message(&ctx.http, |m| {
             m.embed(|e| {

@@ -10,6 +10,7 @@ use html2md::parse_html;
 use ebina_anilist::{search, search_specific, get_schedule, queries::queries::MediaType};
 
 use crate::anilist_embed;
+use ebina_macro::tracking;
 use crate::utils::options::Options;
 
 const ANI_LIST_COLOR: serenity::utils::Colour = Colour::from_rgb(43, 45, 66);
@@ -19,6 +20,7 @@ const ANI_LIST_AUTHOR_URL: &str = "https://anilist.co/";
 const ANI_LIST_AUTHOR_ICON_URL: &str = "https://anilist.co/img/icons/apple-touch-icon.png";
 
 /// Searches Anlist including both manga and anime.
+#[tracking("al_search")]
 #[command("search")]
 #[help_available(false)]
 pub async fn anilist_search(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
@@ -26,18 +28,21 @@ pub async fn anilist_search(ctx: &Context, msg: &Message, args: Args) -> Command
 	Ok(())
 }
 
+#[tracking("al_manga")]
 #[command("manga")]
 pub async fn anilist_manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 	anilist_media(ctx, msg, args, Some(MediaType::Manga)).await?;
 	Ok(())
 }
 
+#[tracking("al_anime")]
 #[command("anime")]
 pub async fn anilist_anime(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 	anilist_media(ctx, msg, args, Some(MediaType::Anime)).await?;
 	Ok(())
 }
 
+#[tracking("al_schedule")]
 #[command("schedule")]
 pub async fn anilist_schedule(ctx: &Context, msg: &Message) -> CommandResult {
 	//Convert the current time to UTC

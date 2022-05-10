@@ -17,7 +17,7 @@ vndb = { git="https://github.com/Tracreed/vndb.rs", features = ["tokio-on"] }
 serde_json = "1.0"
 serde = "1.0.136"
 diesel-derive-enum = { version = "1", features = ["postgres"] }
-regex = "1"
+regex = "1.5.5"
 isolang = "2.1.0"
 num-format = "0.4.0"
 isocountry = "0.3.2"
@@ -40,11 +40,12 @@ diesel_migrations = "1.4.0"
 rustnao = { git = "https://github.com/Tracreed/RustNAO" }
 ebina-web = { version = "0.1.0", path = "../ebina-web" }
 ebina-types = { version = "0.1.0", path = "../ebina-types" }
+ebina-macro = { version = "0.1.0", path = "../ebina-macro" }
 
 [features]
 numeric = ["bigdecimal"]
 default = ["bigdecimal"]
 
 [dependencies.serenity]
-version = "0.10.10"
-features = ["framework", "standard_framework", "rustls_backend", "collector"]
+version = "0.11.1"
+features = ["framework", "standard_framework", "rustls_backend", "collector", "model", "unstable_discord_api", "client", "gateway", "chrono"]

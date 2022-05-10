@@ -63,7 +63,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
         .await_replies(&ctx)
         .channel_id(msg.channel_id)
         .timeout(Duration::from_secs(60))
-        .await;
+        .build();
 
     let http = &ctx.http;
 

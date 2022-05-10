@@ -39,7 +39,7 @@ pub async fn prometheus_metrics(req: Request<State>) -> tide::Result {
 	r.register(Box::new(url_counter))?;
 
 
-	gauge.set(ctx.cache.guild_count().await.try_into().unwrap());
+	gauge.set(ctx.cache.guild_count().try_into().unwrap());
 
 	// Gather the metrics.
 	let mut buffer = vec![];

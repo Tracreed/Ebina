@@ -64,7 +64,7 @@ pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
         }
     };
 
-    let time_to_respond = Utc::now().signed_duration_since(msg.timestamp);
+    let time_to_respond = Utc::now().signed_duration_since(msg.timestamp.with_timezone(&Utc));
 
     let latency_message = MessageBuilder::new()
         .push_line(format!(
@@ -157,7 +157,6 @@ pub async fn weather(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
 
 #[command]
 #[aliases("s")]
-#[usage = "<image_link> or <attached image>"]
 #[description = "Ask WolframAlpha questions about anything"]
 pub async fn wolf(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let app_id = env::var("WOLFRAM_ALPHA").expect("WOLFRAM_ALPHA needs to be set");
@@ -207,6 +206,7 @@ pub async fn wolf(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 }
 
 #[command]
+#[usage = "<image_link> or <attached image>"]
 #[description = "Get the sauce of an image from SauceNAO"]
 pub async fn sauce(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 	let api_key = env::var("SAUCENAO").expect("SAUCENAO needs to be set");

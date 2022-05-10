@@ -54,15 +54,15 @@ impl WebApp {
 async fn hello(req: Request<State>) -> tide::Result {
 	let state = req.state();
 	let ctx = &state.ctx;
-	let user = ctx.cache.user(ctx.cache.current_user().await).await.unwrap();
-	let guilds = ctx.cache.guilds().await;
+	let user = ctx.cache.user(ctx.cache.current_user()).unwrap();
+	let guilds = ctx.cache.guilds();
     Ok(format!("Hello world!, {} is in {} guilds", user.name, guilds.len()).into())
 }
 
 async fn status(req: Request<State>) -> tide::Result {
 	let state = req.state();
 	let ctx = &state.ctx;
-	let user = ctx.cache.user(ctx.cache.current_user().await).await.unwrap();
+	let user = ctx.cache.user(ctx.cache.current_user()).unwrap();
 
 	//let st = user.;
 
@@ -82,14 +82,14 @@ async fn status(req: Request<State>) -> tide::Result {
 async fn guilds(req: Request<State>) -> tide::Result {
 	let state= req.state();
 	let ctx = &state.ctx;
-	let guilds = ctx.cache.guilds().await;
+	let guilds = ctx.cache.guilds();
 
 	let mut gis = models::Guilds {
 		guilds: Vec::new()
 	};
 
 	for gid in guilds {
-		let guild = ctx.cache.guild(gid).await;
+		let guild = ctx.cache.guild(gid);
 		println!("{}", gid);
 		match guild {
 			Some(g) => gis.guilds.push(g),
@@ -111,7 +111,7 @@ async fn get_guild(req: Request<State>) -> tide::Result {
 	let ctx = &state.ctx;
 	let guild_id: u64 = req.param("id").unwrap().parse().unwrap();
 	let gid = GuildId::from(guild_id);
-	let guild = ctx.cache.guild(gid).await.unwrap();
+	let guild = ctx.cache.guild(gid).unwrap();
 
 	let json = serde_json::to_string(&guild).unwrap();
 

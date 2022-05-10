@@ -2,7 +2,7 @@ use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::*;
-use serenity::builder::{CreateEmbedAuthor, CreateEmbed};
+use serenity::builder::{CreateEmbedAuthor, CreateEmbed, CreateSelectMenu, CreateActionRow, CreateSelectMenuOptions, CreateSelectMenuOption};
 
 use mangadex_api::types::{Language, TagGroup};
 use mangadex_api::types::{RelationshipType, ReferenceExpansionResource};
@@ -18,10 +18,14 @@ use uuid::Uuid;
 
 use url::Url;
 
+use std::collections::HashMap;
+
 use crate::utils::options::Options;
+use ebina_macro::tracking;
 
 const MANGADEX_COLOR: serenity::utils::Colour = Colour::from_rgb(246, 131, 40);
 
+#[tracking("md_manga")]
 #[command]
 pub async fn manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let client = MangaDexClient::default();
@@ -285,6 +289,80 @@ async fn send_md_embed(ctx: &Context, msg: &Message, id: Uuid, edit: bool, messa
 		let _ = &msg.channel_id.send_message(&ctx.http, |m| m.set_embed(embed)).await;
 	}
 
+}
+
+pub struct MDLinkOptions {
+	pub track: Vec<u64>,
+	pub roles: HashMap<u64, u64>
+}
+
+pub struct MDLink {
+	pub guild_id: Option<u64>,
+	pub channel_id: Option<u64>,
+	pub group_id: Option<u64>,
+	pub options: MDLinkOptions
+}
+
+// Sets a announcement channel for the bot to post updates regarding a mangadex group
+// Including new chapters, new series.
+#[tracking("md_link")]
+#[command]
+#[description = "Sets a channel to post updates regarding a mangadex group"]
+#[aliases("link")]
+#[only_in("guilds")]
+#[required_permissions("ADMINISTRATOR")]
+pub async fn link(ctx: &Context, msg: &Message) -> CommandResult {
+
+	// Get the channel ID from prompt
+	// First get all the channels in the guild
+	let guild_id = msg.guild_id.unwrap();
+	let channels = guild_id.channels(ctx).await.unwrap();
+
+	let mut channel_options = Vec::<CreateSelectMenuOption>::new();
+
+	channels.iter().for_each(|channel| {
+		// Return if the channel is not a text channel
+		if channel.1.kind != ChannelType::Text {
+			return;
+		}
+
+		let mut option = CreateSelectMenuOption::default();
+		option.label(&channel.1.name);
+		option.value(channel.1.id);
+		
+		channel_options.push(option);
+	});
+
+	// Create CreateSelectorMenu to select the channel
+	let mut menu = CreateSelectMenu::default();
+	menu.custom_id("md_link_channel_select");
+	menu.placeholder("Select a channel");
+	menu.options(|o| {
+			o.set_options(channel_options);
+			o
+		}
+	);
+	menu.max_values(1);
+
+	// Instance of CreateActionRow
+	let mut action_row = CreateActionRow::default();
+	action_row.add_select_menu(menu);
+
+
+	// Send a message with an embed with a select menu of all the channels
+	let _ = msg.channel_id.send_message(&ctx.http, |m| {
+		m.embed(|e| {
+			e.title("Select a channel");
+			e.description("Select the channel you want it to send messages to");
+			//e.field("Channels", channel_names.join(", "), true);
+			e
+		});
+		m.components(|c| {
+			c.add_action_row(action_row);
+			c
+		})
+	}).await;
+	Ok(())
 }
 
 fn fix_description<S: Into<String>>(description: S) -> String {
