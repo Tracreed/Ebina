@@ -177,7 +177,8 @@ async fn handle_url(ctx: &Context, msg: &Message, url: Url) {
 	// Send the url to the right handler.
 	match domain {
 		"mangadex.org" => {
-			manage_md_url(ctx, msg, url.clone()).await;
+			// Ignore mangadex links for now.
+			//manage_md_url(ctx, msg, url.clone()).await;
 		}
 		"anilist.co" => {
 

@@ -1,4 +1,5 @@
 use crate::OsuClientContainer;
+use ebina_macro::tracking;
 use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
@@ -16,6 +17,7 @@ use humantime::format_duration;
 
 use num_format::{Locale, ToFormattedString};
 
+#[tracking("osu_user_info")]
 #[command]
 #[example = "Peppy"]
 #[description = "Used to get information about a user playing Osu!"]

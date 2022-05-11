@@ -1,8 +1,10 @@
+use ebina_macro::tracking;
 use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 
+#[tracking("ban")]
 #[command]
 #[required_permissions("BAN_MEMBERS")]
 #[only_in("guilds")]
@@ -20,6 +22,7 @@ pub async fn ban(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+#[tracking("kick")]
 #[command]
 #[required_permissions("KICK_MEMBERS")]
 #[only_in("guilds")]
@@ -32,6 +35,7 @@ pub async fn kick(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+#[tracking("uinfo")]
 #[command]
 #[aliases("uinfo")]
 pub async fn userinfo(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
@@ -82,6 +86,7 @@ pub async fn userinfo(ctx: &Context, msg: &Message, mut args: Args) -> CommandRe
     Ok(())
 }
 
+#[tracking("avatar")]
 #[command]
 pub async fn avatar(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let id = args.single::<u64>().unwrap_or(msg.author.id.0);
@@ -97,6 +102,7 @@ pub async fn avatar(ctx: &Context, msg: &Message, mut args: Args) -> CommandResu
     Ok(())
 }
 
+#[tracking("guildinfo")]
 #[command]
 #[aliases("ginfo")]
 pub async fn guildinfo(ctx: &Context, msg: &Message) -> CommandResult {
@@ -125,6 +131,7 @@ pub async fn guildinfo(ctx: &Context, msg: &Message) -> CommandResult {
 }
 
 /// Removes the amount of messages specified, has to be between 2 and 100
+#[tracking("clear")]
 #[command]
 #[required_permissions("MANAGE_MESSAGES")]
 #[aliases("clr")]

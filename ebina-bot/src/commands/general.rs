@@ -4,6 +4,7 @@ use crate::ShardManagerContainer;
 
 use chrono::Utc;
 
+use ebina_macro::tracking;
 use serenity::client::bridge::gateway::ShardId;
 use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
@@ -25,6 +26,7 @@ extern crate openweather;
 
 use openweather::{LocationSpecifier, Settings};
 
+#[tracking("ping")]
 #[command]
 pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     let data = ctx.data.read().await;
@@ -87,6 +89,7 @@ pub async fn ping(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+#[tracking("invite")]
 #[command]
 #[description = "Invite the bot to your server"]
 pub async fn invite(ctx: &Context, msg: &Message) -> CommandResult {
@@ -107,6 +110,7 @@ pub async fn invite(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+#[tracking("weather")]
 #[command]
 #[aliases("w")]
 #[description = "Get current weather from city name"]
@@ -155,6 +159,7 @@ pub async fn weather(ctx: &Context, msg: &Message, mut args: Args) -> CommandRes
     Ok(())
 }
 
+#[tracking("wolfram")]
 #[command]
 #[aliases("s")]
 #[description = "Ask WolframAlpha questions about anything"]
@@ -205,6 +210,7 @@ pub async fn wolf(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     Ok(())
 }
 
+#[tracking("sauce")]
 #[command]
 #[usage = "<image_link> or <attached image>"]
 #[description = "Get the sauce of an image from SauceNAO"]
@@ -293,6 +299,7 @@ pub async fn sauce(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
 	Ok(())
 }
 
+#[tracking("prefix")]
 #[command]
 #[required_permissions("MANAGE_GUILD")]
 pub async fn prefix(ctx: &Context, msg: &Message, args: Args) -> CommandResult {

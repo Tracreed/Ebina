@@ -1,3 +1,4 @@
+use ebina_macro::tracking;
 use serenity::framework::standard::{macros::command, CommandResult};
 use serenity::futures::stream::StreamExt;
 use serenity::model::prelude::*;
@@ -18,6 +19,7 @@ use bigdecimal::{BigDecimal, FromPrimitive, ToPrimitive};
 
 use crate::models::*;
 
+#[tracking("charades_play")]
 #[command]
 #[description = "A game similar to solving a rebus, figure out the anime/game from the emojis!"]
 pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
@@ -95,6 +97,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
     Ok(())
 }
 
+#[tracking("charades_add")]
 #[command]
 #[owners_only]
 pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
