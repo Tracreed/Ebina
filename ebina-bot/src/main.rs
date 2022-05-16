@@ -28,7 +28,7 @@ use serenity::{
         },
     },
     http::Http,
-    model::{prelude::*, interactions::application_command::ApplicationCommand},
+    model::prelude::*,
     prelude::*,
 };
 
@@ -99,13 +99,6 @@ impl EventHandler for Handler {
         info!("Connected as {}", ready.user.name);
         let guilds = ctx.cache.guilds().len();
         info!("Guilds in cache: {}", guilds);
-
-		let guild_command = ApplicationCommand::create_global_application_command(&ctx, |command| {
-			command.name("ping").description("Pings the bot.")
-		})
-		.await;
-
-		info!("Created guild command: {:?}", guild_command);
     }
 
     async fn resume(&self, _: Context, _: ResumedEvent) {
@@ -164,7 +157,7 @@ impl EventHandler for Handler {
 }
 
 /// Handle messages that are just URLs.
-async fn handle_url(ctx: &Context, msg: &Message, url: Url) {
+async fn handle_url(ctx: &Context, _msg: &Message, url: Url) {
 	// Check if the URL has a valid domain.
 	let domain = match url.domain() {
 		Some(v) => v,
@@ -194,7 +187,7 @@ async fn handle_url(ctx: &Context, msg: &Message, url: Url) {
 }
 
 #[hook]
-async fn before(ctx: &Context, msg: &Message, command_name: &str) -> bool {
+async fn before(_ctx: &Context, _msg: &Message, _command_name: &str) -> bool {
 	// Increment the number of times this command has been run once. If
     // the command's name does not exist in the counter, add a default
     // value of 0.
@@ -333,7 +326,8 @@ async fn main() {
 
 	let intents = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::DIRECT_MESSAGES
-        | GatewayIntents::MESSAGE_CONTENT;
+        | GatewayIntents::MESSAGE_CONTENT
+		| GatewayIntents::GUILDS;
     let mut client = Client::builder(&token, intents)
         .framework(framework)
         .event_handler(Handler {

@@ -1,12 +1,8 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
-use quote::{quote, format_ident};
-use syn::token::Token;
+use quote::quote;
 
-use std::collections::HashSet as Set;
-
-use syn::{parse_macro_input, parse_quote, Expr, Ident, ItemFn, Local, Pat, Stmt, Token, FnArg, PatType, NestedMeta, Lit};
-use syn::parse::{Parse, ParseStream, Result};
+use syn::{parse_macro_input, ItemFn, Pat, FnArg, PatType, NestedMeta, Lit};
 
 // Proc macro attribute for adding tracking to a function
 #[proc_macro_attribute]
@@ -37,6 +33,7 @@ pub fn tracking(args: TokenStream, input: TokenStream) -> TokenStream {
 			let __counter = __data.get_mut::<ebina_types::CommandCounter>().expect("Expected CommandCounter in TypeMap");
 			let __entry = __counter.entry(#name.to_string()).or_insert(0);
 			*__entry += 1;
+			drop(__data);
 			#block
 		}
 	};
