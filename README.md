@@ -9,7 +9,7 @@ Ebins supports two website interfaces, prometheus for live command metrics as we
 * Wolfram alpha
 * Open weather map
 * Anilist
-* sauce now (With image upload)
+* saucenao (With image upload)
 * vndb.org (udp api, but forked and fixed some)
 * Mangadex.org
 * Osu (Api library written [osu_v2](https://git.fuyu.moe/Tracreed/osu_v2))
