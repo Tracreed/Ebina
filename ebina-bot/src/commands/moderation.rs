@@ -153,16 +153,17 @@ pub async fn clear(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
         }
     };
 
-    if amount > 100 {
+    if !(2..=100).contains(&amount) {
         msg.channel_id
             .send_message(&ctx.http, |m| {
                 m.embed(|e| {
-                    e.description("Can't remove more than 100 messages");
+                    e.description("You must enter a number between 2 and 100.");
                     e
                 });
                 m
             })
             .await?;
+        return Ok(());
     }
 
     let messages = msg
