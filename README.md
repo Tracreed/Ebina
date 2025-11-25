@@ -65,12 +65,34 @@ Create a `.env` file in the `ebina-bot` directory with the following variables:
 | `WOLFRAM_ALPHA`   | Your WolframAlpha API key.                    |
 | `SAUCENAO`        | Your SauceNAO API key.                        |
 
+## Versioning
+
+This project uses [Knope](https://knope.tech/) to manage versioning and changelogs. When you make a change that you believe should be included in the next release, you should document it using a change file or a conventional commit.
+
+### Change Files
+
+For most changes, you should add a change file. The Knope bot will prompt you to do so in your pull request.
+
+### Conventional Commits
+
+For changes that do not affect the public API or user experience (e.g., CI changes, documentation updates), you can use a conventional commit message. For example:
+
+```
+feat: Add a new feature
+fix: Fix a bug
+docs: Update documentation
+ci: Make changes to the CI pipeline
+```
+
+The Knope bot will automatically create a release pull request when changes are merged into the `master` branch.
+
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
 1.  Fork the Project
 2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
+3.  Document your changes (see the [Versioning](#versioning) section).
+4.  Commit your Changes (`git commit -m 'feat: Add some AmazingFeature'`)
+5.  Push to the Branch (`git push origin feature/AmazingFeature`)
+6.  Open a Pull Request
