@@ -1,0 +1,20 @@
+[bot]
+releases.enabled = true
+
+[[packages]]
+path = "ebina-bot"
+
+[[packages]]
+path = "ebina-types"
+
+[[packages]]
+path = "ebina-macro"
+
+[[packages]]
+path = "ebina-anilist"
+
+[[packages]]
+path = "ebina-web"
+
+[[packages]]
+path = "ebina-web-dashboard"
