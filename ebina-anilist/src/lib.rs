@@ -45,12 +45,12 @@ S: Into<String> {
 pub async fn get_schedule(date_utc: chrono::DateTime<chrono::Utc>) -> Result<queries::queries::Schedule, Box<dyn Error>> {
 	use queries::queries::{Schedule, ScheduleArguments};
 	// Todays NaiveDatein UTC clamping to the start of the day
-	let date_utc_clamped = date_utc.date().and_hms(0, 0, 0);
+	let date_utc_clamped = date_utc.date_naive().and_hms_opt(0, 0, 0).unwrap();
 	// Todays dateTime in UTC clamping to the end of the day
 	let date_utc_clamped_end = date_utc_clamped.add(chrono::Duration::days(1)).sub(chrono::Duration::seconds(1));
 	let arguments = ScheduleArguments {
-		airing_at_greater: Some(date_utc_clamped.timestamp() as i32),
-		airing_at_lesser: Some(date_utc_clamped_end.timestamp() as i32),
+		airing_at_greater: Some(date_utc_clamped.and_utc().timestamp() as i32),
+		airing_at_lesser: Some(date_utc_clamped_end.and_utc().timestamp() as i32),
 	};
 	let operation = Schedule::build(arguments);
 	let client = reqwest::Client::new();

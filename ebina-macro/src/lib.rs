@@ -7,7 +7,7 @@ use syn::{parse_macro_input, ItemFn, Pat, FnArg, PatType, NestedMeta, Lit};
 // Proc macro attribute for adding tracking to a function
 #[proc_macro_attribute]
 pub fn tracking(args: TokenStream, input: TokenStream) -> TokenStream {
-	let args = parse_macro_input!(args as syn::AttributeArgs);
+	let args = parse_macro_input!(args as Vec<NestedMeta>);
 
 	let name = if let NestedMeta::Lit(Lit::Str(v)) = args.first().unwrap() {
 		v

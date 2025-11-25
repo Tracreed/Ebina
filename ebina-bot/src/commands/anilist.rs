@@ -64,10 +64,7 @@ pub async fn anilist_schedule(ctx: &Context, msg: &Message) -> CommandResult {
 
 	// Find the next airing
 	let next_airing = temp_schedule.iter().find(|airing| {
-		let airing_at = chrono::DateTime::<Utc>::from_utc(
-			chrono::NaiveDateTime::from_timestamp(airing.as_ref().unwrap().airing_at as i64, 0),
-			Utc,
-		);
+		let airing_at = chrono::DateTime::from_timestamp(airing.as_ref().unwrap().airing_at as i64, 0).unwrap();
 		airing_at > today
 	});
 
@@ -212,11 +209,11 @@ pub async fn anilist_media(ctx: &Context, msg: &Message, args: Args, media_type:
 				if start_date.year.is_some() && start_date.month.is_some() && start_date.day.is_some(){
 					e.field(
 						"Start Date",
-						chrono::naive::NaiveDate::from_ymd(
+						chrono::naive::NaiveDate::from_ymd_opt(
 							start_date.year.unwrap(),
 							start_date.month.unwrap().try_into().unwrap(),
 							start_date.day.unwrap().try_into().unwrap(),
-						),
+						).unwrap(),
 							true
 					);
 				}
@@ -226,11 +223,11 @@ pub async fn anilist_media(ctx: &Context, msg: &Message, args: Args, media_type:
 				if end_date.year.is_some() && end_date.month.is_some() && end_date.day.is_some(){
 					e.field(
 						"End Date",
-						chrono::naive::NaiveDate::from_ymd(
+						chrono::naive::NaiveDate::from_ymd_opt(
 							end_date.year.unwrap(),
 							end_date.month.unwrap().try_into().unwrap(),
 							end_date.day.unwrap().try_into().unwrap(),
-						),
+						).unwrap(),
 						true
 					);
 				}
