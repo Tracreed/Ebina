@@ -1,8 +1,3 @@
-use std::env;
-
-use serenity::model::channel::Message;
-use tracing::{error, info};
-
 pub mod options;
 
 

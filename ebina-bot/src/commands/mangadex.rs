@@ -2,7 +2,7 @@ use serenity::framework::standard::{macros::command, Args, CommandResult};
 use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::*;
-use serenity::builder::{CreateEmbedAuthor, CreateEmbed, CreateSelectMenu, CreateActionRow, CreateSelectMenuOptions, CreateSelectMenuOption};
+use serenity::builder::{CreateEmbedAuthor, CreateEmbed, CreateSelectMenu, CreateActionRow, CreateSelectMenuOption};
 
 use mangadex_api::types::{Language, TagGroup};
 use mangadex_api::types::{RelationshipType, ReferenceExpansionResource};
