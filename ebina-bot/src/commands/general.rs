@@ -11,11 +11,8 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 
-use crate::diesel::prelude::*;
-use crate::establish_connection;
 use crate::models::*;
-use crate::schema::*;
-
+use crate::{ConnectionContainer};
 //use tracing::{error, info};
 
 use wolfram_alpha::query::query;
@@ -303,11 +300,16 @@ pub async fn sauce(ctx: &Context, msg: &Message, mut args: Args) -> CommandResul
 #[command]
 #[required_permissions("MANAGE_GUILD")]
 pub async fn prefix(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    let connection = establish_connection();
-
+    let data = ctx.data.read().await;
+    let pool = data.get::<ConnectionContainer>().unwrap();
     let prefix = args.rest();
+    let guild_id = msg.guild_id.unwrap().0 as i64;
 
-    create_server_settings(&connection, &(msg.guild_id.unwrap().0 as i64), prefix);
+    sqlx::query("INSERT INTO discord_settings (server_id, prefix) VALUES ($1, $2) ON CONFLICT (server_id) DO UPDATE SET prefix = $2")
+        .bind(guild_id)
+        .bind(prefix)
+        .execute(pool)
+        .await?;
 
     msg.channel_id
         .send_message(&ctx.http, |m| {
@@ -321,25 +323,4 @@ pub async fn prefix(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         .await?;
 
     Ok(())
-}
-
-pub fn create_server_settings<'a>(
-    conn: &PgConnection,
-    server: &'a i64,
-    prefix: &str,
-) -> ServerSettings {
-    let new_server_setting = NewServerSettings {
-        server_id: server,
-        prefix: &prefix.to_string(),
-    };
-
-    use crate::schema::discord_settings::server_id;
-
-    diesel::insert_into(discord_settings::table)
-        .values(&new_server_setting)
-        .on_conflict(server_id)
-        .do_update()
-        .set(discord_settings::prefix.eq(prefix))
-        .get_result(conn)
-        .expect("Error saving new guild setting")
 }

@@ -1,20 +1,7 @@
-use super::schema::charades;
-use super::schema::*;
 use bigdecimal::BigDecimal;
-use diesel_derive_enum::DbEnum;
+use sqlx::FromRow;
 
-#[derive(Insertable)]
-#[table_name = "charades"]
-pub struct NewCharade<'a> {
-    pub category: &'a Categories,
-    pub hint: &'a str,
-    pub puzzle: &'a str,
-    pub solution: &'a str,
-    pub difficulty: &'a Difficulties,
-    pub userid: &'a BigDecimal,
-    pub public: &'a bool,
-}
-#[derive(Queryable)]
+#[derive(FromRow)]
 pub struct Charade {
     pub id: i32,
     pub category: Categories,
@@ -26,61 +13,42 @@ pub struct Charade {
     pub public: bool,
 }
 
-#[derive(Queryable, Debug)]
+#[derive(FromRow, Debug)]
 pub struct Feed {
     pub id: i32,
-    pub server: i64,
-    pub channel: i64,
-    pub manga: String,
+    pub server_id: i64,
+    pub channel_id: i64,
+    pub manga_id: String,
 }
 
-#[derive(Insertable)]
-#[table_name = "feeds"]
-pub struct NewFeed<'a> {
-    pub server_id: &'a i64,
-    pub channel_id: &'a i64,
-    pub manga_id: &'a String,
-}
-
-#[derive(Queryable, Debug)]
+#[derive(FromRow, Debug)]
 pub struct Role {
     pub id: i32,
-    pub server: i64,
+    pub server_id: i64,
     pub data: String,
 }
 
-#[derive(Insertable)]
-#[table_name = "roles"]
-pub struct NewRole<'a> {
-    pub server_id: &'a i64,
-    pub data: &'a String,
-}
-
-#[derive(Queryable, Debug)]
+#[derive(FromRow, Debug)]
 pub struct ServerSettings {
     pub id: i32,
     pub server_id: i64,
     pub prefix: String,
 }
 
-#[derive(Insertable)]
-#[table_name = "discord_settings"]
-pub struct NewServerSettings<'a> {
-    pub server_id: &'a i64,
-    pub prefix: &'a String,
-}
-
-#[derive(Debug, PartialEq, DbEnum, Clone)]
+#[derive(Debug, PartialEq, Clone, sqlx::Type)]
+#[sqlx(type_name = "Categories")]
 pub enum Categories {
-    Anime, // All variants must be fieldless
+    Anime,
     Manga,
     Game,
     TV,
     Movie,
 }
-#[derive(Debug, PartialEq, DbEnum, Clone)]
+
+#[derive(Debug, PartialEq, Clone, sqlx::Type)]
+#[sqlx(type_name = "Difficulties")]
 pub enum Difficulties {
-    Easy, // All variants must be fieldless
+    Easy,
     Medium,
     Hard,
 }

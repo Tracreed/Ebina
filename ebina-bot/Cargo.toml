@@ -11,12 +11,11 @@ tokio = { version = "1.17.0", features = ["macros", "signal", "rt-multi-thread"]
 tracing = "0.1.32"
 tracing-subscriber = "0.3.9"
 tracing-futures = "0.2" # needed so intrument works with async functions.
-diesel = { version = "1.4.8", features = ["postgres", "numeric"] }
-bigdecimal = { version = "0.1.2", optional = true}
+sqlx = { version = "0.7.1", features = [ "runtime-tokio-rustls", "postgres", "macros", "chrono", "bigdecimal" ] }
+bigdecimal = { version = "0.3.0", optional = true }
 vndb = { git="https://github.com/Tracreed/vndb.rs", features = ["tokio-on"] }
 serde_json = "1.0"
 serde = "1.0.136"
-diesel-derive-enum = { version = "1", features = ["postgres"] }
 regex = "1.5.5"
 isolang = "2.1.0"
 num-format = "0.4.0"
@@ -29,6 +28,8 @@ reqwest = "0.11.10"
 roxmltree = "0.14.1"
 url = "2.2.2"
 mangadex-api = { git = "https://gitlab.com/gondolyr/mangadex-api", features = ["multi-thread"] }
+mangadex-api-schema = { git = "https://gitlab.com/gondolyr/mangadex-api" }
+mangadex-api-types = { git = "https://gitlab.com/gondolyr/mangadex-api" }
 openweather = { git = "https://github.com/Tracreed/openweather"}
 ron = "0.7.0"
 uuid = "1.0.0"
@@ -36,7 +37,6 @@ wolfram_alpha = { git = "https://github.com/ParadoxSpiral/wolfram-alpha-rs" }
 ebina-anilist = { path = "../ebina-anilist" }
 html2md = "0.2.13"
 helium-api = { git = "https://github.com/Tracreed/helium-api-rs" }
-diesel_migrations = "1.4.0"
 rustnao = { git = "https://github.com/Tracreed/RustNAO" }
 ebina-web = { version = "0.1.0", path = "../ebina-web" }
 ebina-types = { version = "0.1.0", path = "../ebina-types" }

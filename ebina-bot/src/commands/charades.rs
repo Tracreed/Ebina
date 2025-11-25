@@ -5,15 +5,10 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 
-use crate::establish_connection;
-
 use crate::models::{Categories, Difficulties};
-
+use crate::ConnectionContainer;
 use std::time::Duration;
 use tracing::info;
-
-use crate::diesel::prelude::*;
-use crate::diesel::sql_types;
 
 use bigdecimal::{BigDecimal, FromPrimitive, ToPrimitive};
 
@@ -23,36 +18,27 @@ use crate::models::*;
 #[command]
 #[description = "A game similar to solving a rebus, figure out the anime/game from the emojis!"]
 pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
-    use crate::schema::charades::dsl::*;
+    let data = ctx.data.read().await;
+    let pool = data.get::<ConnectionContainer>().unwrap();
 
-    let connection = establish_connection();
+    let result: Charade = sqlx::query_as("SELECT * FROM charades ORDER BY RANDOM() LIMIT 1")
+        .fetch_one(pool)
+        .await?;
 
-    no_arg_sql_function!(
-        random,
-        sql_types::Integer,
-        "Represents the SQL RANDOM() function"
-    );
-
-    let results = charades
-        .limit(1)
-        .order(random)
-        .load::<Charade>(&connection)
-        .expect("Error loading posts");
-
-    println!("Charade with ID {} selected", results[0].id);
+    info!("Charade with ID {} selected", result.id);
 
     let username = &ctx
         .http
-        .get_user(results[0].userid.to_u64().unwrap())
+        .get_user(result.userid.to_u64().unwrap())
         .await?
         .name;
 
     msg.channel_id
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
-                e.title(format!("Guess that {:?}", results[0].category));
-                e.description(&results[0].puzzle);
-                e.field("Difficulty", format!("{:?}", results[0].difficulty), true);
+                e.title(format!("Guess that {:?}", result.category));
+                e.description(&result.puzzle);
+                e.field("Difficulty", format!("{:?}", result.difficulty), true);
                 e.footer(|f| f.text(format!("Added by {}", username)))
             });
 
@@ -72,7 +58,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
     loop {
         match replies.next().await {
             Some(reply) => {
-                if reply.content.to_lowercase() == results[0].solution.to_lowercase() {
+                if reply.content.to_lowercase() == result.solution.to_lowercase() {
                     reply.reply(http, "You got it right!").await?;
                     replies.stop();
                     break;
@@ -83,7 +69,7 @@ pub async fn play(ctx: &Context, msg: &Message) -> CommandResult {
                     .send_message(&ctx.http, |m| {
                         m.embed(|e| {
                             e.title("Time is up");
-                            e.description(format!("The right answer was: {}", results[0].solution));
+                            e.description(format!("The right answer was: {}", result.solution));
                             e
                         });
 
@@ -243,28 +229,19 @@ pub async fn add(ctx: &Context, msg: &Message) -> CommandResult {
 
     msg.channel_id.say(&ctx, response).await?;
 
-    let conn = establish_connection();
+    let data = ctx.data.read().await;
+    let pool = data.get::<ConnectionContainer>().unwrap();
 
-    create_charade(
-        &conn,
-        NewCharade {
-            category: &category,
-            puzzle: puzzle.as_str(),
-            hint: hint.as_str(),
-            solution: solution.as_str(),
-            difficulty: &difficulty,
-            userid: &BigDecimal::from_u64(*msg.author.id.as_u64()).unwrap(),
-            public: &true,
-        },
-    );
+    sqlx::query("INSERT INTO charades (category, hint, puzzle, solution, difficulty, userid, public) VALUES ($1, $2, $3, $4, $5, $6, $7)")
+        .bind(category)
+        .bind(hint)
+        .bind(puzzle)
+        .bind(solution)
+        .bind(difficulty)
+        .bind(BigDecimal::from_u64(*msg.author.id.as_u64()).unwrap())
+        .bind(true)
+        .execute(pool)
+        .await?;
 
     Ok(())
-}
-use crate::schema::*;
-
-pub fn create_charade(conn: &PgConnection, new_charade: NewCharade) -> Charade {
-    diesel::insert_into(charades::table)
-        .values(&new_charade)
-        .get_result(conn)
-        .expect("Error saving new post")
 }

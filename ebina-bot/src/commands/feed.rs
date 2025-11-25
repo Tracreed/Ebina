@@ -1,18 +1,15 @@
-use serenity::{framework::standard::{macros::command, Args, CommandResult}, futures::future::MapOk};
+use serenity::{framework::standard::{macros::command, Args, CommandResult}};
 use serenity::model::prelude::*;
 use serenity::http::Http;
 use serenity::prelude::*;
 use serenity::utils::*;
 use serenity::utils::MessageBuilder;
-use crate::establish_connection;
+use crate::ConnectionContainer;
 use mangadex_api::MangaDexClient;
-use ron::*;
+use ron;
 use uuid::Uuid;
 
-use crate::models::*;
-use crate::schema::*;
-
-use crate::diesel::prelude::*;
+use crate::models::{self, Feed};
 
 use std::collections::HashMap;
 
@@ -63,9 +60,18 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 		.send()
 		.await?;
 	let group = group_res.data;
-	let conn = establish_connection();
 
-	create_feed(&conn, &(guild_id.0 as i64), &(channel_id.0 as i64), &group_id);
+    let data = ctx.data.read().await;
+    let pool = data.get::<ConnectionContainer>().unwrap();
+
+    sqlx::query("INSERT INTO feeds (server_id, channel_id, manga_id) VALUES ($1, $2, $3)")
+        .bind(guild_id.0 as i64)
+        .bind(channel_id.0 as i64)
+        .bind(group_id.to_string())
+        .execute(pool)
+        .await?;
+
+	let group_name = group.attributes.name.clone();
 	&msg.channel_id.send_message(&ctx.http, |m| {
 		m.embed(|e| {
 			e.title("Ebina");
@@ -73,7 +79,7 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 				.push("Set ")
 				.mention(&channel_id)
 				.push(" as announcement channel for ")
-				.push(group.name())
+				.push(group_name)
 				.build();
 			e.description(message);
 			e
@@ -81,16 +87,22 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 		m
 	})
 	.await.unwrap();
-	println!("{:?}", group);
+	println!("{:?}", group.attributes.name);
 	Ok(())
 }
 
 #[command]
 #[owners_only]
 pub async fn unset(ctx: &Context, msg: &Message) -> CommandResult {
-	let channel_id = msg.channel_id;
-	let conn = establish_connection();
-	delete_feed(&conn, &(channel_id.0 as i64));
+    let data = ctx.data.read().await;
+    let pool = data.get::<ConnectionContainer>().unwrap();
+    let channel_id = msg.channel_id.0 as i64;
+
+    sqlx::query("DELETE FROM feeds WHERE channel_id = $1")
+        .bind(channel_id)
+        .execute(pool)
+        .await?;
+
 	Ok(())
 }
 
@@ -98,9 +110,10 @@ pub async fn unset(ctx: &Context, msg: &Message) -> CommandResult {
 #[owners_only]
 pub async fn role(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 	let manga_id = args.single::<u64>()?;
-	let guild_id = msg.guild_id.unwrap();
+	let guild_id = msg.guild_id.unwrap().0 as i64;
 	let role_id: u64;
-	let connection = establish_connection();
+    let data = ctx.data.read().await;
+    let pool = data.get::<ConnectionContainer>().unwrap();
 
 	if msg.mention_roles.len() > 0 {
 		role_id = msg.mention_roles[0].0;
@@ -108,105 +121,108 @@ pub async fn role(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult
 		return Ok(());
 	}
 
-	use crate::schema::roles::dsl::*;
-
 	let mut map: HashMap<u64, u64>;
 
-	let roles_res = roles
-		.filter(crate::schema::roles::columns::server_id.eq(guild_id.0 as i64))
-		.load::<crate::models::Role>(&connection)
-		.unwrap();
-	if roles_res.len() > 0 {
-		map = ron::from_str(&roles_res[0].data).unwrap_or(HashMap::new());
+    let role: Result<Option<models::Role>, sqlx::Error> = sqlx::query_as("SELECT * FROM roles WHERE server_id = $1")
+        .bind(guild_id)
+        .fetch_optional(pool)
+        .await;
+
+	if let Ok(Some(role)) = role {
+		map = ron::from_str(&role.data).unwrap_or(HashMap::new());
 	} else {
 		map = HashMap::new();
 	}
 
 	map.insert(manga_id, role_id);
 
-	if roles_res.len() > 0 {
-		diesel::update(roles).set(data.eq(ron::to_string(&map).unwrap())).execute(&connection).unwrap();
-	} else {
-		let new_role = crate::models::NewRole{
-			server_id: &(guild_id.0 as i64),
-			data: &ron::to_string(&map).unwrap()
-		};
-		diesel::insert_into(crate::schema::roles::table)
-		.values(new_role)
-		.get_result::<crate::models::Role>(&connection)
-		.expect("Error adding new role");
-	}
+    sqlx::query("INSERT INTO roles (server_id, data) VALUES ($1, $2) ON CONFLICT (server_id) DO UPDATE SET data = $2")
+        .bind(guild_id)
+        .bind(ron::to_string(&map).unwrap())
+        .execute(pool)
+        .await?;
 
 	Ok(())
 }
 
 
-pub async fn check_feeds(token: String) {
-	use crate::schema::feeds::dsl::*;
-	use crate::schema::roles::dsl::*;
-
-	let connection = establish_connection();
-
-	let http = Http::new_with_token(&token);
+pub async fn check_feeds(token: String, pool: &sqlx::PgPool) {
+	let http = Http::new(&token);
 
 	let md_client = MangaDexClient::default();
 
-	let results = feeds
-		.load::<Feed>(&connection)
-		.expect("Error loading posts");
-	for feed in results {
-		let group_res = md_client.group_chapters(feed.manga as u64).limit(10).send().await.unwrap().ok().unwrap();
-		let chapters = group_res.data().chapters();
-		let groups = group_res.data().groups();
-		let roles_res = roles
-			.filter(crate::schema::roles::columns::server_id.eq(feed.server as i64))
-			.load::<crate::models::Role>(&connection)
-			.unwrap();
+    let feeds: Vec<Feed> = sqlx::query_as("SELECT * FROM feeds")
+        .fetch_all(pool)
+        .await
+        .expect("Error loading posts");
+
+	for feed in feeds {
+		let group_res = md_client.scanlation_group().get().group_id(&Uuid::parse_str(&feed.manga_id).unwrap()).build().unwrap().send().await.unwrap();
+		let relationships = group_res.data.relationships;
+
+        let role: Result<Option<models::Role>, sqlx::Error> = sqlx::query_as("SELECT * FROM roles WHERE server_id = $1")
+            .bind(feed.server_id)
+            .fetch_optional(pool)
+            .await;
+
 		let role_data: HashMap<u64, u64>;
-		if roles_res.len() > 0 {
-			role_data = ron::from_str(&roles_res[0].data).unwrap();
+
+		if let Ok(Some(role)) = role {
+			role_data = ron::from_str(&role.data).unwrap();
 		} else {
 			role_data = HashMap::new();
 		}
+
 		let mut chapters_group = HashMap::new();
-		for chapter in chapters {
-			if chrono::offset::Local::now().signed_duration_since(*chapter.timestamp()).num_minutes() > 10 {
-				break;
-			}
+        for relationship in &relationships {
+            if relationship.type_ == mangadex_api_types::RelationshipType::Chapter {
+                let chapter_res = md_client.chapter().get().chapter_id(&relationship.id).build().unwrap().send().await.unwrap();
+                let chapter_attributes = chapter_res.data.attributes;
+                let manga_id = chapter_res.data.relationships.iter().find(|r| r.type_ == mangadex_api_types::RelationshipType::Manga).unwrap().id;
 
-			let mut groups_vec = Vec::<String>::new();
-			for group in groups {
-				groups_vec.push(group.name().clone());
-			};
+                let publish_at: chrono::DateTime<chrono::offset::Utc> = chapter_attributes.publish_at.to_string().parse().unwrap();
+                if chrono::offset::Local::now().signed_duration_since(publish_at).num_minutes() > 10 {
+                    break;
+                }
 
-			let feed_group = FeedGroup {
-			    manga_id: *chapter.manga_id(),
-			    title: chapter.manga_title().to_string(),
-			    last: chapter.chapter().parse::<f64>().unwrap(),
-			    last_id: *chapter.id(),
-			    first: chapter.chapter().parse::<f64>().unwrap(), 
-			    first_id: *chapter.id(),
-			    group: groups_vec,
-				chapters: 1,
-			};
-			info!("{:?}", feed_group);
-			let chapter_group = match chapters_group.get_mut(chapter.manga_id()) {
-				Some(v) => {v},
-				None => {
-					chapters_group.insert(chapter.manga_id(), feed_group.clone());
-					continue;
-				},
-			};
+                let mut groups_vec = Vec::<String>::new();
+                for group_rel in &relationships {
+                    if group_rel.type_ == mangadex_api_types::RelationshipType::ScanlationGroup {
+                        if let Some(mangadex_api_schema::v5::RelatedAttributes::ScanlationGroup(group_attributes)) = group_rel.attributes.as_ref() {
+                            groups_vec.push(group_attributes.name.clone());
+                        }
+                    }
+                }
 
-			if chapter_group.last < chapter.chapter().parse::<f64>().unwrap() {
-				chapter_group.set_last(chapter.chapter().parse::<f64>().unwrap(), *chapter.id());
-			}
+                let feed_group = FeedGroup {
+                    manga_id: manga_id.as_u64_pair().0,
+                    title: chapter_attributes.title.clone(),
+                    last: chapter_attributes.chapter.clone().unwrap_or("0".to_string()).parse::<f64>().unwrap(),
+                    last_id: relationship.id.as_u64_pair().0,
+                    first: chapter_attributes.chapter.clone().unwrap_or("0".to_string()).parse::<f64>().unwrap(),
+                    first_id: relationship.id.as_u64_pair().0,
+                    group: groups_vec,
+                    chapters: 1,
+                };
+                info!("{:?}", feed_group);
+                let chapter_group = match chapters_group.get_mut(&manga_id.as_u64_pair().0) {
+                    Some(v) => {v},
+                    None => {
+                        chapters_group.insert(manga_id.as_u64_pair().0, feed_group.clone());
+                        continue;
+                    },
+                };
 
-			if chapter_group.first > chapter.chapter().parse::<f64>().unwrap() {
-				chapter_group.set_first(chapter.chapter().parse::<f64>().unwrap(), *chapter.id());
-			}
-		}
-		let channel = http.get_channel(feed.channel as u64).await.unwrap().guild().unwrap();
+                if chapter_group.last < chapter_attributes.chapter.clone().unwrap_or("0".to_string()).parse::<f64>().unwrap() {
+                    chapter_group.set_last(chapter_attributes.chapter.clone().unwrap_or("0".to_string()).parse::<f64>().unwrap(), relationship.id.as_u64_pair().0);
+                }
+
+                if chapter_group.first > chapter_attributes.chapter.clone().unwrap_or("0".to_string()).parse::<f64>().unwrap() {
+                    chapter_group.set_first(chapter_attributes.chapter.clone().unwrap_or("0".to_string()).parse::<f64>().unwrap(), relationship.id.as_u64_pair().0);
+                }
+            }
+        }
+		let channel = http.get_channel(feed.channel_id as u64).await.unwrap().guild().unwrap();
 
 		for (_, chapter) in chapters_group.iter() {
 			channel.id.send_message(&http, |m| {
@@ -239,22 +255,4 @@ pub async fn check_feeds(token: String) {
 			.await.unwrap();
 		}
 	}
-}
-
-pub fn create_feed<'a>(conn: &PgConnection, server: &'a i64, channel: &'a i64, manga: &'a String) -> Feed {
-	let new_feed = NewFeed {
-		server_id: server,
-		channel_id: channel,
-		manga_id: manga
-	};
-	diesel::insert_into(feeds::table)
-		.values(&new_feed)
-		.get_result(conn)
-		.expect("Error saving new feed")
-}
-
-pub fn delete_feed<'a>(conn: &PgConnection, channel: &'a i64) {
-	use crate::schema::feeds::dsl::*;
-
-	diesel::delete(feeds.filter(channel_id.eq(channel))).execute(conn).unwrap();
 }
