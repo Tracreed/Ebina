@@ -1,23 +1,15 @@
 mod commands;
 
 pub mod models;
-pub mod schema;
 pub mod utils;
 
 use std::{collections::HashSet, env, sync::{Arc, atomic::AtomicBool}};
 
-#[macro_use]
-extern crate diesel;
 extern crate bigdecimal;
 extern crate osu_v2;
 extern crate reqwest;
 extern crate roxmltree;
 
-#[macro_use]
-extern crate diesel_migrations;
-
-
-use diesel::{pg::PgConnection, prelude::*};
 use serenity::{
     async_trait,
     client::bridge::gateway::ShardManager,
@@ -49,8 +41,6 @@ use commands::{
 
 use ebina_types::*;
 
-embed_migrations!();
-
 pub struct ShardManagerContainer;
 
 impl TypeMapKey for ShardManagerContainer {
@@ -60,7 +50,7 @@ impl TypeMapKey for ShardManagerContainer {
 pub struct ConnectionContainer;
 
 impl TypeMapKey for ConnectionContainer {
-    type Value = Mutex<PgConnection>;
+    type Value = sqlx::PgPool;
 }
 
 pub struct OsuClientContainer;
@@ -262,9 +252,12 @@ async fn main() {
 
     let http = Http::new(&token);
 
-	let connection = establish_connection();
+    let pool = establish_connection().await;
 
-	embedded_migrations::run(&connection).unwrap();
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .unwrap();
 
     // We will fetch your bot's owners and id
     let (owners, bot_id) = match http.get_current_application_info().await {
@@ -289,26 +282,18 @@ async fn main() {
             c.owners(owners)
                 .dynamic_prefix(|ctx, msg| {
                     Box::pin(async move {
-                        use crate::schema::discord_settings::dsl::*;
-
-                        let guild = msg.guild_id.unwrap().0;
-
+                        let guild_id = msg.guild_id.unwrap().0 as i64;
                         let data = ctx.data.read().await;
+                        let pool = data.get::<ConnectionContainer>().unwrap();
 
-                        let conn = &*data.get::<ConnectionContainer>().unwrap().lock().await;
-                        let result = discord_settings
-                            .filter(server_id.eq(guild as i64))
-                            .limit(1)
-                            .load::<ServerSettings>(conn);
-                        match result {
-                            Ok(v) => {
-                                if v.is_empty() {
-                                    None
-                                } else {
-                                    Some(v[0].prefix.clone())
-                                }
-                            }
-                            Err(_) => None,
+                        let settings: Result<Option<ServerSettings>, sqlx::Error> = sqlx::query_as("SELECT * FROM discord_settings WHERE server_id = $1")
+                            .bind(guild_id)
+                            .fetch_optional(pool)
+                            .await;
+
+                        match settings {
+                            Ok(Some(settings)) => Some(settings.prefix),
+                            _ => None,
                         }
                     })
                 })
@@ -345,9 +330,7 @@ async fn main() {
         let client_id = env::var("OSU_ID").expect("OSU_ID needs to be set");
         let client_secret = env::var("OSU_SECRET").expect("OSU_SECRET needs to be set");
 
-        let connection = Mutex::new(establish_connection());
-
-        data.insert::<ConnectionContainer>(connection);
+        data.insert::<ConnectionContainer>(pool.clone());
 
         let osuclient = Mutex::new(
             osu_v2::client::Client::new(client_id, client_secret)
@@ -380,25 +363,28 @@ async fn main() {
         shard_manager_term.lock().await.shutdown_all().await;
     });
 
-    /* let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(600));
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(600));
 
     tokio::spawn(async move {
         loop {
             interval.tick().await;
             //mangadex_update_xml(token.clone()).await;
-            check_feeds(token.clone()).await;
+            commands::feed::check_feeds(token.clone(), &pool).await;
         }
-    }); */
+    });
 
     if let Err(why) = client.start_autosharded().await {
         error!("Client error: {:?}", why);
     }
 }
 
-pub fn establish_connection() -> PgConnection {
+pub async fn establish_connection() -> sqlx::PgPool {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url)
-        .unwrap_or_else(|e| panic!("Error connecting to {}, because of {}", database_url, e))
+    sqlx::postgres::PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&database_url)
+        .await
+        .unwrap()
 }
 
 async fn parse_tags(client: &Client) {

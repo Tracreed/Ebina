@@ -5,6 +5,6 @@ pub mod moderation;
 pub mod osu;
 pub mod owner;
 pub mod vndb;
-//pub mod feed;
+pub mod feed;
 pub mod anilist;
 pub mod macros;
