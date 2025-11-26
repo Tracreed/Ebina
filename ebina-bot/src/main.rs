@@ -96,6 +96,28 @@ impl EventHandler for Handler {
     }
 
 	async fn message(&self, ctx: Context, msg: Message) {
+        if msg.author.bot {
+            return;
+        }
+
+        if let Some(guild_id) = msg.guild_id {
+            let data = ctx.data.read().await;
+            let pool = data.get::<ConnectionContainer>().unwrap();
+
+            let query = sqlx::query(
+                r#"
+                INSERT INTO message_counts (server_id, date, count)
+                VALUES ($1, CURRENT_DATE, 1)
+                ON CONFLICT (server_id, date)
+                DO UPDATE SET count = message_counts.count + 1;
+                "#
+            )
+            .bind(guild_id.0 as i64);
+
+            if let Err(why) = query.execute(pool).await {
+                error!("Failed to log message count: {:?}", why);
+            }
+        }
 
 		let raw_msg = msg.content.clone();
 
