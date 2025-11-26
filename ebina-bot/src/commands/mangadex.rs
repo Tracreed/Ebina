@@ -16,6 +16,10 @@ use regex::Regex;
 
 use uuid::Uuid;
 
+use url::Url;
+
+use std::collections::HashMap;
+
 use crate::utils::options::Options;
 use ebina_macro::tracking;
 
@@ -70,6 +74,25 @@ pub async fn manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
 	send_md_embed(ctx, msg, manga.id, true, Some(index.unwrap().1), Some(index.unwrap().2)).await;
     Ok(())
+}
+
+#[allow(dead_code)]
+pub async fn manage_md_url(ctx: &Context, msg: &Message, url: Url) {
+	let id_opt = {
+		let mut path_segments = url.path_segments().ok_or("cannot be base").unwrap();
+		if path_segments.next().unwrap() == "title" {
+			path_segments.next()
+		} else {
+			return
+		}
+	};
+
+	let id = match id_opt {
+		Some(v) => Uuid::parse_str(v).unwrap(),
+		None => return,
+	};
+
+	send_md_embed(ctx, msg, id, false, None, None).await;
 }
 
 async fn send_md_embed(ctx: &Context, msg: &Message, id: Uuid, edit: bool, message_id: Option<MessageId>, channel_id: Option<ChannelId>) {
@@ -267,6 +290,20 @@ async fn send_md_embed(ctx: &Context, msg: &Message, id: Uuid, edit: bool, messa
 		let _ = &msg.channel_id.send_message(&ctx.http, |m| m.set_embed(embed)).await;
 	}
 
+}
+
+#[allow(dead_code)]
+pub struct MDLinkOptions {
+	pub track: Vec<u64>,
+	pub roles: HashMap<u64, u64>
+}
+
+#[allow(dead_code)]
+pub struct MDLink {
+	pub guild_id: Option<u64>,
+	pub channel_id: Option<u64>,
+	pub group_id: Option<u64>,
+	pub options: MDLinkOptions
 }
 
 // Sets a announcement channel for the bot to post updates regarding a mangadex group

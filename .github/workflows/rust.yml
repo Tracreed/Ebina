@@ -29,7 +29,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - run: cargo clippy --workspace --exclude ebina-web-dashboard -- -D warnings
+      - run: cargo clippy --workspace -- -D warnings
 
   test:
 
@@ -39,7 +39,7 @@ jobs:
     - uses: Swatinem/rust-cache@v1
     - uses: actions/checkout@v4
     - name: Run tests
-      run: cargo test --workspace --exclude ebina-web-dashboard --verbose --release -- -D warnings
+      run: cargo test --workspace --verbose --release -- -D warnings
 
   release:
     if: (github.head_ref == 'knope/release' && github.event.pull_request.merged == true)
