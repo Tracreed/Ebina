@@ -76,6 +76,7 @@ pub async fn manga(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub async fn manage_md_url(ctx: &Context, msg: &Message, url: Url) {
 	let id_opt = {
 		let mut path_segments = url.path_segments().ok_or("cannot be base").unwrap();
@@ -85,7 +86,7 @@ pub async fn manage_md_url(ctx: &Context, msg: &Message, url: Url) {
 			return
 		}
 	};
-	
+
 	let id = match id_opt {
 		Some(v) => Uuid::parse_str(v).unwrap(),
 		None => return,
@@ -291,11 +292,13 @@ async fn send_md_embed(ctx: &Context, msg: &Message, id: Uuid, edit: bool, messa
 
 }
 
+#[allow(dead_code)]
 pub struct MDLinkOptions {
 	pub track: Vec<u64>,
 	pub roles: HashMap<u64, u64>
 }
 
+#[allow(dead_code)]
 pub struct MDLink {
 	pub guild_id: Option<u64>,
 	pub channel_id: Option<u64>,

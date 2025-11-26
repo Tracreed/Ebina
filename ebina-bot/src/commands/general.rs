@@ -11,7 +11,6 @@ use serenity::model::prelude::*;
 use serenity::prelude::*;
 use serenity::utils::MessageBuilder;
 
-use crate::models::*;
 use crate::{ConnectionContainer};
 //use tracing::{error, info};
 
