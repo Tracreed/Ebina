@@ -23,8 +23,6 @@ struct FeedGroup {
 	last_id: u64,
 	first: f64,
 	first_id: u64,
-	group: Vec<String>,
-	chapters: u64,
 }
 
 trait Update {
@@ -48,7 +46,6 @@ impl Update for FeedGroup {
 #[owners_only]
 #[min_args(1)]
 pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-	let data = ctx.data.read().await;
 	let client = MangaDexClient::default();
 	let guild_id = msg.guild_id.unwrap();
 	let channel_id = msg.channel_id;
@@ -61,18 +58,20 @@ pub async fn set(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 		.await?;
 	let group = group_res.data;
 
-    let data = ctx.data.read().await;
-    let pool = data.get::<ConnectionContainer>().unwrap();
+    let pool = {
+        let data = ctx.data.read().await;
+        data.get::<ConnectionContainer>().unwrap().clone()
+    };
 
     sqlx::query("INSERT INTO feeds (server_id, channel_id, manga_id) VALUES ($1, $2, $3)")
         .bind(guild_id.0 as i64)
         .bind(channel_id.0 as i64)
         .bind(group_id.to_string())
-        .execute(pool)
+        .execute(&pool)
         .await?;
 
 	let group_name = group.attributes.name.clone();
-	&msg.channel_id.send_message(&ctx.http, |m| {
+	msg.channel_id.send_message(&ctx.http, |m| {
 		m.embed(|e| {
 			e.title("Ebina");
 			let message = MessageBuilder::new()
@@ -201,8 +200,6 @@ pub async fn check_feeds(token: String, pool: &sqlx::PgPool) {
                     last_id: relationship.id.as_u64_pair().0,
                     first: chapter_attributes.chapter.clone().unwrap_or("0".to_string()).parse::<f64>().unwrap(),
                     first_id: relationship.id.as_u64_pair().0,
-                    group: groups_vec,
-                    chapters: 1,
                 };
                 info!("{:?}", feed_group);
                 let chapter_group = match chapters_group.get_mut(&manga_id.as_u64_pair().0) {

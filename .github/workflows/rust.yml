@@ -11,6 +11,26 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: cargo clippy --workspace --exclude ebina-web-dashboard -- -D warnings
+
   test:
 
     runs-on: ubuntu-latest
@@ -19,7 +39,7 @@ jobs:
     - uses: Swatinem/rust-cache@v1
     - uses: actions/checkout@v4
     - name: Run tests
-      run: cargo test --verbose --release
+      run: cargo test --workspace --exclude ebina-web-dashboard --verbose --release -- -D warnings
 
   release:
     if: (github.head_ref == 'knope/release' && github.event.pull_request.merged == true)
